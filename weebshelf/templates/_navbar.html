@@ -1,3 +1,8 @@
+<div class="support-banner" id="supportBanner">
+    <span class="support-banner-text">Figurya is free &amp; open-source. <a href="/donate">Your support</a> keeps it running.</span>
+    <button class="support-banner-close" onclick="document.getElementById('supportBanner').style.display='none';sessionStorage.setItem('figurya-banner-dismissed','1')" aria-label="Dismiss">&times;</button>
+</div>
+<script>if(sessionStorage.getItem('figurya-banner-dismissed')==='1'){document.getElementById('supportBanner').style.display='none'}</script>
 <nav class="navbar">
     <a href="/" class="nav-logo">
         <img src="/static/logo.svg" alt="Figurya" height="32">

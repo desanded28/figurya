@@ -3,11 +3,17 @@ import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 import asyncio
+
+# ── SEO Constants ─────────────────────────────────────────────
+SITE_URL = "https://figuryaa.onrender.com"
+SITE_NAME = "Figurya"
+DEFAULT_DESCRIPTION = "Search anime figurines across 8 stores at once. Compare prices, find deals, and discover figures by character, style, or vibe. Free and open-source."
+DEFAULT_OG_TITLE = "Figurya — Anime Figurine Search Engine"
 
 from weebshelf.query import parse_query, build_search_terms
 from weebshelf.fetchers.mfc import HobbySearchFetcher
@@ -97,11 +103,52 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
+# ── SEO Routes ────────────────────────────────────────────────
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt():
+    return """User-agent: *
+Allow: /
+Disallow: /?q=*&sort=*&page=2
+Disallow: /?q=*&sort=*&page=3
+Disallow: /?q=*&sort=*&page=4
+Disallow: /?q=*&sort=*&page=5
+
+Sitemap: {}/sitemap.xml
+
+# Figurya — Anime Figurine Search Engine
+# https://github.com/sanderfloria/weebshelf
+""".format(SITE_URL)
+
+
+@app.get("/sitemap.xml", response_class=PlainTextResponse)
+async def sitemap_xml():
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>{url}/</loc>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>{url}/donate</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+</urlset>""".format(url=SITE_URL)
+    return PlainTextResponse(content=xml, media_type="application/xml")
+
+
 # ── Routes ─────────────────────────────────────────────────────
 @app.get("/donate")
 async def donate(request: Request):
     stats = get_db_stats()
-    return templates.TemplateResponse("donate.html", {"request": request, "stats": stats})
+    return templates.TemplateResponse("donate.html", {
+        "request": request,
+        "stats": stats,
+        "meta_description": "Support Figurya with a donation. Help keep the anime figurine search engine free, fast, and online for all collectors.",
+        "og_title": "Support Figurya — Help Keep It Free",
+        "canonical_url": f"{SITE_URL}/donate",
+    })
 
 
 @app.get("/")
@@ -135,6 +182,7 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
             "has_more": False,
             "page": 1,
             "total_results": 0,
+            "canonical_url": SITE_URL,
         })
 
     parsed = parse_query(q)
@@ -204,6 +252,9 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
         "has_more": has_more,
         "page": page,
         "total_results": total_results,
+        "meta_description": f"Found {total_results} anime figurines for \"{q}\" across 8 stores. Compare prices and availability from AmiAmi, Solaris Japan, HobbySearch, and more.",
+        "og_title": f"{q} — Figurine Search Results | Figurya",
+        "canonical_url": f"{SITE_URL}/?q={q}",
     })
 
 
@@ -215,7 +266,13 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404:
         stats = get_db_stats()
-        return templates.TemplateResponse("404.html", {"request": request, "stats": stats}, status_code=404)
+        return templates.TemplateResponse("404.html", {
+            "request": request,
+            "stats": stats,
+            "meta_description": "Page not found. Search anime figurines across 8 stores on Figurya.",
+            "og_title": "Page Not Found | Figurya",
+            "canonical_url": SITE_URL,
+        }, status_code=404)
     if exc.status_code == 500:
         logger.error(f"Internal server error: {exc.detail}")
     return HTMLResponse(
@@ -228,7 +285,13 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def catch_all(request: Request, path: str):
     stats = get_db_stats()
-    return templates.TemplateResponse("404.html", {"request": request, "stats": stats}, status_code=404)
+    return templates.TemplateResponse("404.html", {
+        "request": request,
+        "stats": stats,
+        "meta_description": "Page not found. Search anime figurines across 8 stores on Figurya.",
+        "og_title": "Page Not Found | Figurya",
+        "canonical_url": SITE_URL,
+    }, status_code=404)
 
 
 def main():
