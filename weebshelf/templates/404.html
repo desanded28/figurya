@@ -16,18 +16,6 @@
 
     {% include '_footer_minimal.html' %}
 
-    <script>
-    // Mobile hamburger menu
-    (function() {
-        var btn = document.getElementById('navHamburger');
-        var nav = document.getElementById('navRight');
-        if (btn && nav) {
-            btn.addEventListener('click', function() {
-                btn.classList.toggle('active');
-                nav.classList.toggle('open');
-            });
-        }
-    })();
-    </script>
+    {% include '_scripts.html' %}
 </body>
 </html>

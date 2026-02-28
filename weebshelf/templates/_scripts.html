@@ -1,0 +1,34 @@
+<!-- Mobile hamburger menu -->
+<script>
+(function() {
+    var btn = document.getElementById('navHamburger');
+    var nav = document.getElementById('navRight');
+    if (btn && nav) {
+        btn.addEventListener('click', function() {
+            btn.classList.toggle('active');
+            nav.classList.toggle('open');
+        });
+    }
+})();
+
+// Theme toggle with localStorage persistence
+(function() {
+    var toggle = document.getElementById('themeToggle');
+    var html = document.documentElement;
+
+    // Apply saved theme immediately (also done in <head> to prevent flash)
+    var saved = localStorage.getItem('figurya-theme');
+    if (saved) {
+        html.setAttribute('data-theme', saved);
+    }
+
+    if (toggle) {
+        toggle.addEventListener('click', function() {
+            var current = html.getAttribute('data-theme') || 'dark';
+            var next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('figurya-theme', next);
+        });
+    }
+})();
+</script>

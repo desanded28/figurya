@@ -1,5 +1,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+// Apply saved theme before CSS loads to prevent flash
+(function(){var t=localStorage.getItem('figurya-theme');if(t)document.documentElement.setAttribute('data-theme',t)})();
+</script>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 <link rel="stylesheet" href="/static/style.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
