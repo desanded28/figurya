@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger("figurya.fetchers")
 import httpx
 from weebshelf.fetchers.base import BaseFetcher
 from weebshelf.models import Figurine
@@ -26,11 +28,11 @@ class NinNinFetcher(BaseFetcher):
             async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
                 resp = await client.get(url, params=params, headers=self.HEADERS)
                 if resp.status_code != 200:
-                    print(f"[NinNin] Status {resp.status_code}")
+                    logger.warning(f"[NinNin] Status {resp.status_code}")
                     return []
                 return self._parse_results(resp.json())
         except Exception as e:
-            print(f"[NinNin] Error: {e}")
+            logger.error(f"[NinNin] Error: {e}")
             return []
 
     def _parse_results(self, data) -> list[Figurine]:
@@ -66,7 +68,7 @@ class NinNinFetcher(BaseFetcher):
                 )
                 figures.append(fig)
             except Exception as e:
-                print(f"[NinNin] Parse error: {e}")
+                logger.error(f"[NinNin] Parse error: {e}")
                 continue
 
         return figures

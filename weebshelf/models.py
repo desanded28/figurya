@@ -42,6 +42,22 @@ class Figurine(BaseModel):
             return f"¥{self.price:,.0f} (~${self.price_usd:,.2f})"
         return f"${self.price:,.2f}"
 
+    @property
+    def safe_product_url(self) -> str:
+        """Return product_url only if it uses a safe protocol."""
+        url = self.product_url or ""
+        if url.startswith(("http://", "https://")):
+            return url
+        return "#"
+
+    @property
+    def safe_image_url(self) -> str:
+        """Return image_url only if it uses a safe protocol."""
+        url = self.image_url or ""
+        if url.startswith(("http://", "https://", "//")):
+            return url
+        return ""
+
 
 class SearchResult(BaseModel):
     figurine: Figurine

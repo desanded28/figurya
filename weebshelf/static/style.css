@@ -956,6 +956,130 @@ a {
     font-style: italic;
 }
 
+/* ===== LOADING SPINNER ===== */
+.loading-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 11, 20, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+}
+
+.loading-spinner {
+    text-align: center;
+}
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid rgba(233, 69, 96, 0.15);
+    border-top-color: #e94560;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #e0e0e8;
+    margin-bottom: 6px;
+}
+
+.loading-sub {
+    font-size: 0.85rem;
+    color: #666680;
+}
+
+/* ===== PAGINATION ===== */
+.pagination {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 20px 24px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.load-more-btn {
+    padding: 14px 40px;
+    background: rgba(233, 69, 96, 0.1);
+    border: 1px solid rgba(233, 69, 96, 0.3);
+    border-radius: 12px;
+    color: #e94560;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.load-more-btn:hover {
+    background: rgba(233, 69, 96, 0.2);
+    transform: translateY(-1px);
+}
+
+.pagination-info {
+    font-size: 0.8rem;
+    color: #555570;
+}
+
+/* ===== ERROR PAGE ===== */
+.error-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 100px 24px;
+    text-align: center;
+    flex: 1;
+}
+
+.error-code {
+    font-size: 6rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #e94560 0%, #ff6b8a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+
+.error-page h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #e0e0e8;
+    margin-bottom: 8px;
+}
+
+.error-page p {
+    font-size: 1rem;
+    color: #666680;
+    margin-bottom: 32px;
+}
+
+.error-btn {
+    padding: 12px 28px;
+    background: #e94560;
+    color: white;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.15s;
+}
+
+.error-btn:hover {
+    background: #d63b54;
+    transform: translateY(-1px);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .navbar {

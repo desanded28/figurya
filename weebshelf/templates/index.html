@@ -43,7 +43,7 @@
             <form class="search-form hero-search" action="/" method="get">
                 <div class="search-wrapper">
                     <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                    <input type="text" name="q" class="search-input" placeholder="Try &quot;pink miku&quot;, &quot;gothic rem&quot;, &quot;cute nendoroid&quot;..." autofocus>
+                    <input type="text" name="q" class="search-input" placeholder="Try &quot;pink miku&quot;, &quot;gothic rem&quot;, &quot;cute nendoroid&quot;..." maxlength="200" autofocus>
                     <button type="submit" class="search-btn">Search</button>
                 </div>
             </form>
@@ -87,13 +87,22 @@
     {% else %}
     <!-- SEARCH RESULTS -->
     <div class="search-header">
-        <form class="search-form" action="/" method="get">
+        <form class="search-form" action="/" method="get" id="searchForm">
             <div class="search-wrapper">
                 <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                <input type="text" name="q" class="search-input" placeholder="Search figurines..." value="{{ query or '' }}" autofocus>
+                <input type="text" name="q" class="search-input" placeholder="Search figurines..." value="{{ query }}" maxlength="200" autofocus>
                 <button type="submit" class="search-btn">Search</button>
             </div>
         </form>
+    </div>
+
+    <!-- Loading spinner (shown while fetching live results) -->
+    <div class="loading-overlay" id="loadingOverlay" style="display:none">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p class="loading-text">Searching 8 stores...</p>
+            <p class="loading-sub">This may take a few seconds for new searches</p>
+        </div>
     </div>
 
     {% if not from_cache and results %}
@@ -106,7 +115,7 @@
     <div class="results-toolbar">
         <div class="results-info">
             {% if results %}
-            <span class="results-count">{{ results|length }} results</span>
+            <span class="results-count">{{ total_results }} results</span>
             <span class="results-query">for "{{ query }}"</span>
             {% if parsed and parsed.colors %}
                 {% for c in parsed.colors %}<span class="filter-pill color">{{ c }}</span>{% endfor %}
@@ -120,20 +129,20 @@
             {% endif %}
         </div>
         <div class="sort-options">
-            <a href="/?q={{ query }}&sort=relevance" class="sort-btn {{ 'active' if sort == 'relevance' }}">Relevance</a>
-            <a href="/?q={{ query }}&sort=price_low" class="sort-btn {{ 'active' if sort == 'price_low' }}">Price &darr;</a>
-            <a href="/?q={{ query }}&sort=price_high" class="sort-btn {{ 'active' if sort == 'price_high' }}">Price &uarr;</a>
-            <a href="/?q={{ query }}&sort=rating" class="sort-btn {{ 'active' if sort == 'rating' }}">Rating</a>
+            <a href="/?q={{ query|urlencode }}&sort=relevance" class="sort-btn {{ 'active' if sort == 'relevance' }}">Relevance</a>
+            <a href="/?q={{ query|urlencode }}&sort=price_low" class="sort-btn {{ 'active' if sort == 'price_low' }}">Price &darr;</a>
+            <a href="/?q={{ query|urlencode }}&sort=price_high" class="sort-btn {{ 'active' if sort == 'price_high' }}">Price &uarr;</a>
+            <a href="/?q={{ query|urlencode }}&sort=rating" class="sort-btn {{ 'active' if sort == 'rating' }}">Rating</a>
         </div>
     </div>
 
     {% if results %}
     <div class="results-grid">
         {% for r in results %}
-        <a href="{{ r.figurine.product_url or '#' }}" target="_blank" rel="noopener" class="card">
+        <a href="{{ r.figurine.safe_product_url }}" target="_blank" rel="noopener noreferrer" class="card">
             <div class="card-img">
                 {% if r.figurine.image_url %}
-                <img src="{{ r.figurine.image_url }}" alt="{{ r.figurine.name }}" loading="lazy">
+                <img src="{{ r.figurine.safe_image_url }}" alt="{{ r.figurine.name }}" loading="lazy">
                 {% else %}
                 <div class="no-img">No image</div>
                 {% endif %}
@@ -169,6 +178,14 @@
         </a>
         {% endfor %}
     </div>
+
+    {% if has_more %}
+    <div class="pagination">
+        <a href="/?q={{ query|urlencode }}&sort={{ sort }}&page={{ page + 1 }}" class="load-more-btn">Load more results</a>
+        <span class="pagination-info">Showing {{ results|length }} of {{ total_results }} results</span>
+    </div>
+    {% endif %}
+
     {% else %}
     <div class="empty-state">
         <h2>Nothing found</h2>
@@ -190,9 +207,9 @@
                 <h4>Send us feedback</h4>
                 <form class="feedback-form" action="https://formsubmit.co/figuryasearch@gmail.com" method="POST">
                     <input type="hidden" name="_subject" value="Figurya Feedback">
-                    <input type="hidden" name="_captcha" value="false">
+                    <input type="hidden" name="_captcha" value="true">
                     <input type="hidden" name="_template" value="table">
-                    <textarea name="message" class="feedback-input" placeholder="Bug report, suggestion, or just say hi..." rows="3" required></textarea>
+                    <textarea name="message" class="feedback-input" placeholder="Bug report, suggestion, or just say hi..." rows="3" maxlength="2000" required></textarea>
                     <div class="feedback-row">
                         <input type="email" name="email" class="feedback-email" placeholder="Your email (optional)">
                         <button type="submit" class="feedback-btn">Send</button>
@@ -231,14 +248,25 @@
     (function() {
         var loadTime = performance.timing.responseEnd - performance.timing.requestStart;
         if (loadTime > 4000) {
-            // This load was slow — it was a cold start, banner would've been useful
             sessionStorage.setItem('figurya_cold', '1');
         }
-        // Show banner if we flagged a cold start and haven't dismissed it
         if (sessionStorage.getItem('figurya_cold') === '1') {
             var b = document.getElementById('coldBanner');
             if (b) { b.style.display = 'flex'; }
             sessionStorage.removeItem('figurya_cold');
+        }
+    })();
+
+    // Show loading spinner when searching (only for form submissions)
+    (function() {
+        var form = document.getElementById('searchForm');
+        if (form) {
+            form.addEventListener('submit', function() {
+                var overlay = document.getElementById('loadingOverlay');
+                if (overlay) {
+                    overlay.style.display = 'flex';
+                }
+            });
         }
     })();
     </script>

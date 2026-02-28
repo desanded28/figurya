@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Figurya — Page Not Found</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-logo">
+            <img src="/static/logo.svg" alt="Figurya" height="32">
+        </a>
+        <div class="nav-right">
+            {% if stats %}
+            <div class="nav-stats">
+                <span class="stat-pill">{{ stats.figurines }} figures</span>
+                <span class="stat-pill">{{ stats.stores|length }} stores</span>
+            </div>
+            {% endif %}
+            <a href="/donate" class="nav-link donate-link">&hearts; Donate</a>
+        </div>
+    </nav>
+
+    <div class="error-page">
+        <div class="error-code">404</div>
+        <h1>Page not found</h1>
+        <p>The figurine you're looking for isn't here. Maybe it's sold out?</p>
+        <a href="/" class="error-btn">Back to search</a>
+    </div>
+
+    <footer class="site-footer">
+        <div class="footer-bottom">
+            <div class="footer-meta">
+                {% if stats %}
+                <span>{{ stats.figurines }} figurines indexed &middot; {{ stats.stores|length }} stores</span>
+                <span>&middot;</span>
+                {% endif %}
+                <span>Figurya v0.1</span>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

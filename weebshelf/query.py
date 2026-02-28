@@ -13,6 +13,9 @@ def parse_query(raw_query: str) -> dict:
         "scales": ["nendoroid"],
     }
     """
+    # Sanitize: truncate, normalize whitespace
+    import unicodedata
+    raw_query = unicodedata.normalize("NFKC", raw_query)[:200]
     tokens = raw_query.lower().strip().split()
 
     colors = [t for t in tokens if t in COLORS]

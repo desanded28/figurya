@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger("figurya.fetchers")
 import httpx
 from bs4 import BeautifulSoup
 from weebshelf.fetchers.base import BaseFetcher
@@ -30,11 +32,11 @@ class HLJFetcher(BaseFetcher):
                     search_url, params=params, headers=self.HEADERS
                 )
                 if resp.status_code != 200:
-                    print(f"[HLJ] Search returned status {resp.status_code}")
+                    logger.info(f"[HLJ] Search returned status {resp.status_code}")
                     return []
                 return self._parse_results(resp.text)
         except Exception as e:
-            print(f"[HLJ] Error fetching: {e}")
+            logger.error(f"[HLJ] Error fetching: {e}")
             return []
 
     def _parse_results(self, html: str) -> list[Figurine]:
@@ -116,7 +118,7 @@ class HLJFetcher(BaseFetcher):
                 )
                 figures.append(fig)
             except Exception as e:
-                print(f"[HLJ] Error parsing block: {e}")
+                logger.error(f"[HLJ] Error parsing block: {e}")
                 continue
 
         return figures
