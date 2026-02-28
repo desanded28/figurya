@@ -1,21 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48" fill="none">
-  <!-- Figurine icon -->
-  <g transform="translate(4, 2)">
-    <!-- Base/pedestal -->
-    <rect x="8" y="38" width="24" height="4" rx="2" fill="#e94560" opacity="0.8"/>
-    <!-- Body -->
-    <path d="M20 38 L20 20 Q20 14 16 12 L14 11 Q12 10 14 8 L16 7 Q20 5 24 7 L26 8 Q28 10 26 11 L24 12 Q20 14 20 20" fill="#e94560"/>
-    <!-- Head -->
-    <circle cx="20" cy="6" r="5" fill="#e94560"/>
-    <!-- Hair accent -->
-    <path d="M16 3 Q14 0 17 1 Q20 -1 23 1 Q26 0 24 3" stroke="#ff6b81" stroke-width="1.2" fill="none"/>
-    <!-- Sparkle left -->
-    <path d="M4 16 L6 14 L8 16 L6 18 Z" fill="#ff6b81" opacity="0.6"/>
-    <!-- Sparkle right -->
-    <path d="M32 10 L34 8 L36 10 L34 12 Z" fill="#ff6b81" opacity="0.4"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 48">
+  <!-- Sparkle icon -->
+  <g transform="translate(20, 24)">
+    <!-- Main 4-point star -->
+    <path d="M0 -14 C2 -5, 5 -2, 14 0 C5 2, 2 5, 0 14 C-2 5, -5 2, -14 0 C-5 -2, -2 -5, 0 -14Z" fill="#e94560"/>
+    <!-- Small accent sparkle -->
+    <path d="M11 -12 C11.5 -10, 13 -8.5, 15 -8 C13 -7.5, 11.5 -6, 11 -4 C10.5 -6, 9 -7.5, 7 -8 C9 -8.5, 10.5 -10, 11 -12Z" fill="#ff6b8a" opacity="0.7"/>
   </g>
-  <!-- Text: Figurya -->
-  <text x="52" y="35" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif" font-size="32" font-weight="700" letter-spacing="-0.5">
+  <!-- Text -->
+  <text x="44" y="34" font-family="'Inter', 'Segoe UI', -apple-system, sans-serif" font-size="30" font-weight="800" letter-spacing="-1">
     <tspan fill="#ffffff">Fig</tspan><tspan fill="#e94560">u</tspan><tspan fill="#ffffff">rya</tspan>
   </text>
 </svg>
