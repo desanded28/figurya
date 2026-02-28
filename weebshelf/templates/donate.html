@@ -95,12 +95,54 @@
         </div>
     </div>
 
-    <footer class="footer">
-        {% if stats %}
-        <span>{{ stats.figurines }} figurines indexed across {{ stats.stores|length }} stores</span>
-        {% endif %}
-        <span>&middot;</span>
-        <span>Figurya v0.1</span>
+    <footer class="site-footer">
+        <div class="footer-grid">
+            <!-- About -->
+            <div class="footer-col">
+                <img src="/static/logo.svg" alt="Figurya" height="24" class="footer-logo">
+                <p class="footer-about">Figurya is built by a small independent team passionate about making figurine collecting easier. We're not affiliated with or endorsed by any store, manufacturer, or brand listed on this site.</p>
+            </div>
+
+            <!-- Feedback -->
+            <div class="footer-col">
+                <h4>Send us feedback</h4>
+                <form class="feedback-form" action="https://formsubmit.co/figuryasearch@gmail.com" method="POST">
+                    <input type="hidden" name="_subject" value="Figurya Feedback">
+                    <input type="hidden" name="_captcha" value="false">
+                    <input type="hidden" name="_template" value="table">
+                    <textarea name="message" class="feedback-input" placeholder="Bug report, suggestion, or just say hi..." rows="3" required></textarea>
+                    <div class="feedback-row">
+                        <input type="email" name="email" class="feedback-email" placeholder="Your email (optional)">
+                        <button type="submit" class="feedback-btn">Send</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Links & Contact -->
+            <div class="footer-col">
+                <h4>Links</h4>
+                <ul class="footer-links">
+                    <li><a href="/donate">Support Figurya</a></li>
+                    <li><a href="https://github.com/desanded28/figurya" target="_blank" rel="noopener">GitHub</a></li>
+                    <li><a href="https://ko-fi.com/figurya" target="_blank" rel="noopener">Ko-fi</a></li>
+                    <li><a href="mailto:figuryasearch@gmail.com">figuryasearch@gmail.com</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-disclaimers">
+                <p>Figurya is an independent search tool. We are not partnered with, sponsored by, or affiliated with any of the stores or brands displayed in search results. All product names, logos, and trademarks are the property of their respective owners.</p>
+                <p>Search results are aggregated from third-party sources and may not always be accurate. Prices, availability, and product details can change at any time — always verify on the store's website before purchasing.</p>
+            </div>
+            <div class="footer-meta">
+                {% if stats %}
+                <span>{{ stats.figurines }} figurines indexed &middot; {{ stats.stores|length }} stores</span>
+                <span>&middot;</span>
+                {% endif %}
+                <span>Figurya v0.1</span>
+            </div>
+        </div>
     </footer>
 </body>
 </html>
