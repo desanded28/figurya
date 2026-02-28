@@ -1,14 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="8" fill="#0b0b14"/>
-  <!-- Base -->
-  <rect x="10" y="26" width="12" height="2.5" rx="1.25" fill="#e94560" opacity="0.85"/>
-  <!-- Body -->
-  <path d="M16 26 V14 Q16 10 13.5 8.5 L12.5 8 Q11 7 12.5 5.5 L13.5 5 Q16 3.5 18.5 5 L19.5 5.5 Q21 7 19.5 8 L18.5 8.5 Q16 10 16 14" fill="#e94560"/>
-  <!-- Head -->
-  <circle cx="16" cy="5" r="3.2" fill="#e94560"/>
-  <!-- Hair accent -->
-  <path d="M13.8 3.2 Q12.5 1 14.5 1.8 Q16 0.8 17.5 1.8 Q19.5 1 18.2 3.2" stroke="#ff6b8a" stroke-width="0.9" fill="none"/>
-  <!-- Sparkle -->
-  <path d="M6 12 L7.2 10.8 L8.4 12 L7.2 13.2 Z" fill="#ff6b8a" opacity="0.6"/>
-  <path d="M24 8 L25.2 6.8 L26.4 8 L25.2 9.2 Z" fill="#ff6b8a" opacity="0.4"/>
+  <!-- Main 4-point sparkle centered -->
+  <g transform="translate(14, 16)">
+    <path d="M0 -11 C1.6 -4, 4 -1.6, 11 0 C4 1.6, 1.6 4, 0 11 C-1.6 4, -4 1.6, -11 0 C-4 -1.6, -1.6 -4, 0 -11Z" fill="#e94560"/>
+    <!-- Small accent sparkle -->
+    <path d="M9 -9.5 C9.4 -8, 10.4 -7, 12 -6.5 C10.4 -6, 9.4 -5, 9 -3.5 C8.6 -5, 7.6 -6, 6 -6.5 C7.6 -7, 8.6 -8, 9 -9.5Z" fill="#ff6b8a" opacity="0.7"/>
+  </g>
 </svg>
