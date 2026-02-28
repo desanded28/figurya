@@ -13,4 +13,4 @@ dependencies = [
 ]
 
 [project.scripts]
-weebshelf = "weebshelf.app:main"
+figurya = "weebshelf.app:main"

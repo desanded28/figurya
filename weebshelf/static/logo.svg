@@ -1,13 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 48">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48">
   <!-- Sparkle icon -->
-  <g transform="translate(20, 24)">
-    <!-- Main 4-point star -->
-    <path d="M0 -14 C2 -5, 5 -2, 14 0 C5 2, 2 5, 0 14 C-2 5, -5 2, -14 0 C-5 -2, -2 -5, 0 -14Z" fill="#e94560"/>
-    <!-- Small accent sparkle -->
-    <path d="M11 -12 C11.5 -10, 13 -8.5, 15 -8 C13 -7.5, 11.5 -6, 11 -4 C10.5 -6, 9 -7.5, 7 -8 C9 -8.5, 10.5 -10, 11 -12Z" fill="#ff6b8a" opacity="0.7"/>
+  <g transform="translate(22, 24)">
+    <!-- Main 4-point star with smoother curves -->
+    <path d="M0 -15 C1.5 -6, 6 -1.5, 15 0 C6 1.5, 1.5 6, 0 15 C-1.5 6, -6 1.5, -15 0 C-6 -1.5, -1.5 -6, 0 -15Z" fill="url(#sparkleGrad)"/>
+    <!-- Accent sparkle (top-right) -->
+    <path d="M12 -12 C12.4 -10, 13.6 -8.8, 16 -8.3 C13.6 -7.8, 12.4 -6.6, 12 -4.6 C11.6 -6.6, 10.4 -7.8, 8 -8.3 C10.4 -8.8, 11.6 -10, 12 -12Z" fill="#ff6b8a" opacity="0.8"/>
+    <!-- Tiny sparkle dot -->
+    <circle cx="-8" cy="-13" r="1.2" fill="#ff6b8a" opacity="0.5"/>
   </g>
+  <defs>
+    <linearGradient id="sparkleGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e94560"/>
+      <stop offset="100%" stop-color="#ff6b8a"/>
+    </linearGradient>
+  </defs>
   <!-- Text -->
-  <text x="44" y="34" font-family="'Inter', 'Segoe UI', -apple-system, sans-serif" font-size="30" font-weight="800" letter-spacing="-1">
+  <text x="46" y="35" font-family="'Inter', 'Segoe UI', -apple-system, sans-serif" font-size="30" font-weight="800" letter-spacing="-0.5">
     <tspan fill="#ffffff">Fig</tspan><tspan fill="#e94560">u</tspan><tspan fill="#ffffff">rya</tspan>
   </text>
 </svg>

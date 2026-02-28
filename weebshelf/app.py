@@ -211,21 +211,34 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
 
 
 # ── Custom error handlers ─────────────────────────────────────
-@app.exception_handler(404)
-async def not_found_handler(request: Request, exc):
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        stats = get_db_stats()
+        return templates.TemplateResponse("404.html", {"request": request, "stats": stats}, status_code=404)
+    if exc.status_code == 500:
+        logger.error(f"Internal server error: {exc.detail}")
+    return HTMLResponse(
+        content=f"<h1>Error {exc.status_code}</h1><p>{exc.detail or 'Something went wrong.'}</p>",
+        status_code=exc.status_code,
+    )
+
+
+# ── Catch-all for unmatched routes ────────────────────────────
+@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def catch_all(request: Request, path: str):
     stats = get_db_stats()
     return templates.TemplateResponse("404.html", {"request": request, "stats": stats}, status_code=404)
 
 
-@app.exception_handler(500)
-async def server_error_handler(request: Request, exc):
-    logger.error(f"Internal server error: {exc}")
-    return HTMLResponse(
-        content="<h1>Something went wrong</h1><p>We're looking into it. Please try again later.</p>",
-        status_code=500,
-    )
+def main():
+    """Entry point for the CLI script."""
+    import uvicorn
+    uvicorn.run("weebshelf.app:app", host="127.0.0.1", port=8000, reload=True)
 
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("weebshelf.app:app", host="127.0.0.1", port=8000, reload=True)
+    main()
