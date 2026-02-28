@@ -177,6 +177,7 @@
 
     {% include '_footer.html' %}
 
+    {% include '_scripts.html' %}
     <script>
     // Detect Render cold start: if page took >4s to load, show the banner next visit
     (function() {
@@ -200,18 +201,6 @@
                 if (overlay) {
                     overlay.style.display = 'flex';
                 }
-            });
-        }
-    })();
-
-    // Mobile hamburger menu
-    (function() {
-        var btn = document.getElementById('navHamburger');
-        var nav = document.getElementById('navRight');
-        if (btn && nav) {
-            btn.addEventListener('click', function() {
-                btn.classList.toggle('active');
-                nav.classList.toggle('open');
             });
         }
     })();
