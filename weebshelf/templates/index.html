@@ -2,24 +2,17 @@
 <html lang="en">
 <head>
     {% include '_head.html' %}
-    <title>{% if query %}{{ query }} — Figurine Search Results | Figurya{% else %}Figurya — Anime Figurine Search Engine | Compare Prices Across 8 Stores{% endif %}</title>
+    <title>{% if query %}{{ query }} — Figurine Search Results | Figurya{% else %}Figurya — Anime Figurine Search Engine | Compare Prices Across 15 Stores{% endif %}</title>
 </head>
 <body>
     {% include '_navbar.html' %}
-
-    <!-- Render cold start banner (hidden by default, shown via JS) -->
-    <div class="cold-start-banner" id="coldBanner" style="display:none">
-        <span class="cold-icon">&#9889;</span>
-        <span>Figurya is waking up — free hosting spins down after inactivity. Should be ready in a few seconds!</span>
-        <button class="cold-dismiss" onclick="document.getElementById('coldBanner').style.display='none'">&times;</button>
-    </div>
 
     {% if not query %}
     <!-- HERO / LANDING -->
     <div class="hero">
         <div class="hero-content">
             <h1 class="hero-title">Find your next <span class="accent">grail</span></h1>
-            <p class="hero-sub">Search across 8 stores by character, style, or vibe.</p>
+            <p class="hero-sub">Search across 15 stores by character, style, or vibe.</p>
 
             <form class="search-form hero-search" action="/" method="get">
                 <div class="search-wrapper">
@@ -42,7 +35,7 @@
 
         <div class="features">
             <div class="feature">
-                <div class="feature-icon">8</div>
+                <div class="feature-icon">15</div>
                 <div class="feature-text">
                     <strong>Stores</strong>
                     <span>Searched simultaneously</span>
@@ -81,7 +74,7 @@
     <div class="loading-overlay" id="loadingOverlay" style="display:none">
         <div class="loading-spinner">
             <div class="spinner"></div>
-            <p class="loading-text">Searching 8 stores...</p>
+            <p class="loading-text">Searching 15 stores...</p>
             <p class="loading-sub">This may take a few seconds for new searches</p>
         </div>
     </div>
@@ -179,19 +172,6 @@
 
     {% include '_scripts.html' %}
     <script>
-    // Detect Render cold start: if page took >4s to load, show the banner next visit
-    (function() {
-        var loadTime = performance.timing.responseEnd - performance.timing.requestStart;
-        if (loadTime > 4000) {
-            sessionStorage.setItem('figurya_cold', '1');
-        }
-        if (sessionStorage.getItem('figurya_cold') === '1') {
-            var b = document.getElementById('coldBanner');
-            if (b) { b.style.display = 'flex'; }
-            sessionStorage.removeItem('figurya_cold');
-        }
-    })();
-
     // Show loading spinner when searching (only for form submissions)
     (function() {
         var form = document.getElementById('searchForm');

@@ -1,13 +1,13 @@
 # Figurya
 
-Search figurines across 8 stores by character, style, or vibe.
+Search figurines across 15 stores by character, style, or vibe.
 
 ## What it does
 
-Figurya is a free, open-source figurine search engine. Type a character name with optional aesthetic descriptors (like "pink miku girly" or "gothic rem") and get results from 8 stores ranked by relevance, price, and seller reliability.
+Figurya is a free, open-source figurine search engine. Type a character name with optional aesthetic descriptors (like "pink miku girly" or "gothic rem") and get results from 15 stores ranked by relevance, price, and seller reliability.
 
 ### Stores searched
-HobbySearch, HobbyLink Japan, Solaris Japan, Tokyo Otaku Mode, CDJapan, Hobby Genki, Nin-Nin Game, Amazon
+HobbySearch, HobbyLink Japan, Solaris Japan, Tokyo Otaku Mode, CDJapan, Hobby Genki, Nin-Nin Game, Amazon, Suruga-ya, Plaza Japan, Navito World, Otaku Republic, Good Smile Company, Kotobukiya, Animate
 
 ### Features
 - **Vibe search** — colors, aesthetics, and styles are parsed from your query
