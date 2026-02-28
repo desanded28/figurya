@@ -113,9 +113,9 @@
                 <h4>Send us feedback</h4>
                 <form class="feedback-form" action="https://formsubmit.co/figuryasearch@gmail.com" method="POST">
                     <input type="hidden" name="_subject" value="Figurya Feedback">
-                    <input type="hidden" name="_captcha" value="false">
+                    <input type="hidden" name="_captcha" value="true">
                     <input type="hidden" name="_template" value="table">
-                    <textarea name="message" class="feedback-input" placeholder="Bug report, suggestion, or just say hi..." rows="3" required></textarea>
+                    <textarea name="message" class="feedback-input" placeholder="Bug report, suggestion, or just say hi..." rows="3" maxlength="2000" required></textarea>
                     <div class="feedback-row">
                         <input type="email" name="email" class="feedback-email" placeholder="Your email (optional)">
                         <button type="submit" class="feedback-btn">Send</button>

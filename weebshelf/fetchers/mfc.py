@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger("figurya.fetchers")
 import httpx
 from bs4 import BeautifulSoup
 from weebshelf.fetchers.base import BaseFetcher
@@ -33,11 +35,11 @@ class HobbySearchFetcher(BaseFetcher):
                     search_url, params=params, headers=self.HEADERS
                 )
                 if resp.status_code != 200:
-                    print(f"[HobbySearch] Search returned status {resp.status_code}")
+                    logger.info(f"[HobbySearch] Search returned status {resp.status_code}")
                     return []
                 return self._parse_results(resp.text)
         except Exception as e:
-            print(f"[HobbySearch] Error fetching: {e}")
+            logger.error(f"[HobbySearch] Error fetching: {e}")
             return []
 
     def _parse_results(self, html: str) -> list[Figurine]:
@@ -101,7 +103,7 @@ class HobbySearchFetcher(BaseFetcher):
                 )
                 figures.append(fig)
             except Exception as e:
-                print(f"[HobbySearch] Error parsing card: {e}")
+                logger.error(f"[HobbySearch] Error parsing card: {e}")
                 continue
 
         return figures

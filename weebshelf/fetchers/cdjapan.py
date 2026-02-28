@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger("figurya.fetchers")
 import httpx
 from bs4 import BeautifulSoup
 from weebshelf.fetchers.base import BaseFetcher
@@ -27,11 +29,11 @@ class CDJapanFetcher(BaseFetcher):
             async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
                 resp = await client.get(url, params=params, headers=self.HEADERS)
                 if resp.status_code != 200:
-                    print(f"[CDJapan] Status {resp.status_code}")
+                    logger.warning(f"[CDJapan] Status {resp.status_code}")
                     return []
                 return self._parse_results(resp.text)
         except Exception as e:
-            print(f"[CDJapan] Error: {e}")
+            logger.error(f"[CDJapan] Error: {e}")
             return []
 
     def _parse_results(self, html: str) -> list[Figurine]:
@@ -111,7 +113,7 @@ class CDJapanFetcher(BaseFetcher):
                 )
                 figures.append(fig)
             except Exception as e:
-                print(f"[CDJapan] Parse error: {e}")
+                logger.error(f"[CDJapan] Parse error: {e}")
                 continue
 
         return figures

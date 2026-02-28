@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger("figurya.fetchers")
 import httpx
 from bs4 import BeautifulSoup
 from weebshelf.fetchers.base import BaseFetcher
@@ -30,14 +32,14 @@ class AmazonFetcher(BaseFetcher):
                     search_url, params=params, headers=self.HEADERS
                 )
                 if resp.status_code != 200:
-                    print(f"[Amazon] Status {resp.status_code}")
+                    logger.warning(f"[Amazon] Status {resp.status_code}")
                     return []
                 if "captcha" in resp.text.lower()[:2000] or "robot" in resp.text.lower()[:2000]:
-                    print("[Amazon] Captcha detected, skipping")
+                    logger.info("[Amazon] Captcha detected, skipping")
                     return []
                 return self._parse_results(resp.text)
         except Exception as e:
-            print(f"[Amazon] Error: {e}")
+            logger.error(f"[Amazon] Error: {e}")
             return []
 
     def _parse_results(self, html: str) -> list[Figurine]:
@@ -120,7 +122,7 @@ class AmazonFetcher(BaseFetcher):
                 )
                 figures.append(fig)
             except Exception as e:
-                print(f"[Amazon] Parse error: {e}")
+                logger.error(f"[Amazon] Parse error: {e}")
                 continue
 
         return figures

@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger("figurya.fetchers")
 import httpx
 from weebshelf.fetchers.base import BaseFetcher
 from weebshelf.models import Figurine
@@ -26,11 +28,11 @@ class TOMFetcher(BaseFetcher):
             async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
                 resp = await client.get(url, params=params, headers=self.HEADERS)
                 if resp.status_code != 200:
-                    print(f"[TOM] Status {resp.status_code}")
+                    logger.warning(f"[TOM] Status {resp.status_code}")
                     return []
                 return self._parse_results(resp.json())
         except Exception as e:
-            print(f"[TOM] Error: {e}")
+            logger.error(f"[TOM] Error: {e}")
             return []
 
     def _parse_results(self, data: dict) -> list[Figurine]:
@@ -93,7 +95,7 @@ class TOMFetcher(BaseFetcher):
                 )
                 figures.append(fig)
             except Exception as e:
-                print(f"[TOM] Parse error: {e}")
+                logger.error(f"[TOM] Parse error: {e}")
                 continue
 
         return figures
