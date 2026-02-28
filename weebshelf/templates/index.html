@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     {% include '_head.html' %}
-    <title>Figurya{% if query %} — {{ query }}{% endif %}</title>
+    <title>{% if query %}{{ query }} — Figurine Search Results | Figurya{% else %}Figurya — Anime Figurine Search Engine | Compare Prices Across 8 Stores{% endif %}</title>
 </head>
 <body>
     {% include '_navbar.html' %}
