@@ -52,7 +52,7 @@ async def lifespan(app: FastAPI):
         crawler_task.cancel()
 
 
-app = FastAPI(title="WeebShelf", lifespan=lifespan)
+app = FastAPI(title="Figurya", lifespan=lifespan)
 
 BASE_DIR = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")

@@ -1,7 +1,7 @@
 [project]
-name = "weebshelf"
+name = "figurya"
 version = "0.1.0"
-description = "Find the perfect figurine. Search by character, style, or vibe."
+description = "Figurya — find the perfect figurine. Search by character, style, or vibe."
 requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.104",
