@@ -15,9 +15,14 @@
         <a href="/" class="nav-logo">
             <img src="/static/logo.svg" alt="Figurya" height="32">
         </a>
-        <div class="nav-links">
-            <a href="/" class="nav-link">Search</a>
-            <a href="/donate" class="nav-link active">Donate</a>
+        <div class="nav-right">
+            {% if stats %}
+            <div class="nav-stats">
+                <span class="stat-pill">{{ stats.figurines }} figures</span>
+                <span class="stat-pill">{{ stats.stores|length }} stores</span>
+            </div>
+            {% endif %}
+            <a href="/donate" class="nav-link donate-link">&hearts; Donate</a>
         </div>
     </nav>
 
