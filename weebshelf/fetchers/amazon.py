@@ -1,8 +1,6 @@
-import logging
-logger = logging.getLogger("figurya.fetchers")
 import httpx
 from bs4 import BeautifulSoup
-from weebshelf.fetchers.base import BaseFetcher
+from weebshelf.fetchers.base import BaseFetcher, DEFAULT_HEADERS, logger
 from weebshelf.models import Figurine
 from weebshelf.config import MAX_RESULTS_PER_SOURCE
 import re
@@ -13,34 +11,22 @@ class AmazonFetcher(BaseFetcher):
     name = "Amazon"
     BASE_URL = "https://www.amazon.com"
 
-    HEADERS = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-    }
-
-    async def search(self, query: str) -> list[Figurine]:
+    async def _fetch(self, query: str) -> list[Figurine]:
         search_url = f"{self.BASE_URL}/s"
         params = {
             "k": f"{query} figure",
             "i": "toys-and-games",
         }
 
-        try:
-            async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
-                resp = await client.get(
-                    search_url, params=params, headers=self.HEADERS
-                )
-                if resp.status_code != 200:
-                    logger.warning(f"[Amazon] Status {resp.status_code}")
-                    return []
-                if "captcha" in resp.text.lower()[:2000] or "robot" in resp.text.lower()[:2000]:
-                    logger.info("[Amazon] Captcha detected, skipping")
-                    return []
-                return self._parse_results(resp.text)
-        except Exception as e:
-            logger.error(f"[Amazon] Error: {e}")
-            return []
+        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+            resp = await client.get(search_url, params=params, headers=DEFAULT_HEADERS)
+            if resp.status_code != 200:
+                logger.warning(f"[{self.name}] Status {resp.status_code}")
+                return []
+            if "captcha" in resp.text.lower()[:2000] or "robot" in resp.text.lower()[:2000]:
+                logger.info(f"[{self.name}] Captcha detected, skipping")
+                return []
+            return self._parse_results(resp.text)
 
     def _parse_results(self, html: str) -> list[Figurine]:
         soup = BeautifulSoup(html, "html.parser")
@@ -49,7 +35,6 @@ class AmazonFetcher(BaseFetcher):
 
         for card in cards[:MAX_RESULTS_PER_SOURCE]:
             try:
-                # Name
                 title_el = card.select_one("h2 a span") or card.select_one("h2 span")
                 if not title_el:
                     continue
@@ -57,21 +42,17 @@ class AmazonFetcher(BaseFetcher):
                 if not name:
                     continue
 
-                # Link — first a with a real product href
                 link = card.select_one("h2 a[href]")
                 href = ""
                 if link:
                     href = link.get("href", "")
                     if href and not href.startswith("http"):
                         href = self.BASE_URL + href
-                    # Clean the URL — remove tracking params
                     href = re.sub(r"\?.*", "", href) if "/dp/" in href else href
 
-                # Image
                 img = card.select_one("img.s-image")
                 img_src = img.get("src", "") if img else ""
 
-                # Price
                 price = None
                 price_whole = card.select_one(".a-price-whole")
                 price_frac = card.select_one(".a-price-fraction")
@@ -83,27 +64,14 @@ class AmazonFetcher(BaseFetcher):
                     except (ValueError, TypeError):
                         pass
 
-                # Rating
                 rating = None
                 rating_el = card.select_one(".a-icon-star-small .a-icon-alt")
                 if rating_el:
                     rating_match = re.search(r"([\d.]+)", rating_el.get_text())
                     if rating_match:
-                        # Amazon uses 5-star scale, convert to 10
                         rating = float(rating_match.group(1)) * 2
 
-                # Availability — Amazon search results are generally available
-                availability = "in_stock"
-
-                # Tags
-                tags = []
                 name_lower = name.lower()
-                for tag_word in ["nendoroid", "figma", "scale", "prize", "pop up parade",
-                                 "figure", "statue", "pvc", "action figure"]:
-                    if tag_word in name_lower:
-                        tags.append(tag_word)
-
-                # Skip sponsored/ad results that aren't figures
                 skip_words = ["poster", "sticker", "keychain", "phone case", "t-shirt", "shirt"]
                 if any(w in name_lower for w in skip_words) and "figure" not in name_lower:
                     continue
@@ -112,17 +80,17 @@ class AmazonFetcher(BaseFetcher):
                     name=name,
                     product_url=href,
                     image_url=img_src,
-                    store="Amazon",
+                    store=self.name,
                     price=price,
                     currency="USD",
-                    availability=availability,
+                    availability="in_stock",
                     rating=rating,
-                    tags=tags,
+                    tags=self.extract_tags(name),
                     description=name,
                 )
                 figures.append(fig)
             except Exception as e:
-                logger.error(f"[Amazon] Parse error: {e}")
+                logger.error(f"[{self.name}] Parse error: {e}")
                 continue
 
         return figures

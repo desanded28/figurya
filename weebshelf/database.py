@@ -2,6 +2,7 @@ import sqlite3
 import json
 import logging
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from weebshelf.config import CACHE_TTL_HOURS
 
@@ -10,10 +11,24 @@ logger = logging.getLogger("figurya.db")
 DB_PATH = Path(__file__).parent.parent / "weebshelf.db"
 
 
-def get_conn() -> sqlite3.Connection:
+@contextmanager
+def db_conn():
+    """Context manager for database connections. Auto-closes on exit."""
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")  # better concurrent read/write
+    conn.execute("PRAGMA journal_mode=WAL")
+    _init_tables(conn)
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
+def get_conn() -> sqlite3.Connection:
+    """Get a raw connection (use db_conn() context manager instead when possible)."""
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
     _init_tables(conn)
     return conn
 
@@ -74,9 +89,9 @@ def upsert_figurine(conn: sqlite3.Connection, fig_data: dict) -> int:
     tags_raw = fig_data.get("tags", [])
     if not isinstance(tags_raw, list):
         tags_raw = []
-    tags_json = json.dumps(tags_raw[:50])  # Limit to 50 tags max
+    tags_json = json.dumps(tags_raw[:50])
 
-    # Truncate overly long fields to prevent DB bloat
+    # Truncate overly long fields
     name = str(fig_data.get("name", ""))[:500]
     description = str(fig_data.get("description", ""))[:2000]
     image_url = str(fig_data.get("image_url", ""))[:1000]
@@ -109,7 +124,6 @@ def upsert_figurine(conn: sqlite3.Connection, fig_data: dict) -> int:
         now,
     ))
     conn.commit()
-    # Get the id
     row = conn.execute(
         "SELECT id FROM figurines WHERE product_url = ?", (product_url,)
     ).fetchone()
@@ -152,97 +166,89 @@ def store_search_results(conn: sqlite3.Connection, term: str, figurines: list[di
 
 def get_cached_results(term: str) -> list[dict] | None:
     """Get cached figurines for a search term if fresh enough."""
-    conn = get_conn()
-    try:
-        row = conn.execute(
-            "SELECT id, last_crawled FROM search_terms WHERE term = ?", (term,)
-        ).fetchone()
+    with db_conn() as conn:
+        try:
+            row = conn.execute(
+                "SELECT id, last_crawled FROM search_terms WHERE term = ?", (term,)
+            ).fetchone()
 
-        if row is None:
+            if row is None:
+                return None
+
+            age_hours = (time.time() - row["last_crawled"]) / 3600
+            if age_hours > CACHE_TTL_HOURS:
+                return None
+
+            rows = conn.execute("""
+                SELECT f.* FROM figurines f
+                JOIN term_results tr ON f.id = tr.figurine_id
+                WHERE tr.term_id = ?
+                ORDER BY f.last_updated DESC
+            """, (row["id"],)).fetchall()
+
+            results = []
+            for r in rows:
+                d = dict(r)
+                try:
+                    d["tags"] = json.loads(d.get("tags", "[]"))
+                except (json.JSONDecodeError, TypeError):
+                    d["tags"] = []
+                d.pop("id", None)
+                d.pop("last_updated", None)
+                results.append(d)
+            return results
+        except Exception as e:
+            logger.error(f"Error getting cached results for '{term}': {e}")
             return None
-
-        age_hours = (time.time() - row["last_crawled"]) / 3600
-        if age_hours > CACHE_TTL_HOURS:
-            return None
-
-        rows = conn.execute("""
-            SELECT f.* FROM figurines f
-            JOIN term_results tr ON f.id = tr.figurine_id
-            WHERE tr.term_id = ?
-            ORDER BY f.last_updated DESC
-        """, (row["id"],)).fetchall()
-
-        results = []
-        for r in rows:
-            d = dict(r)
-            try:
-                d["tags"] = json.loads(d.get("tags", "[]"))
-            except (json.JSONDecodeError, TypeError):
-                d["tags"] = []
-            d.pop("id", None)
-            d.pop("last_updated", None)
-            results.append(d)
-        return results
-    except Exception as e:
-        logger.error(f"Error getting cached results for '{term}': {e}")
-        return None
-    finally:
-        conn.close()
 
 
 def queue_search_term(term: str):
     """Add a new search term to be crawled in the next cycle."""
-    conn = get_conn()
-    try:
-        now = time.time()
-        conn.execute("""
-            INSERT INTO search_terms (term, popularity, last_crawled, queued, created_at)
-            VALUES (?, 1, 0, 1, ?)
-            ON CONFLICT(term) DO UPDATE SET
-                popularity = popularity + 1,
-                queued = CASE WHEN last_crawled = 0 THEN 1 ELSE queued END
-        """, (term, now))
-        conn.commit()
-    except Exception as e:
-        logger.error(f"Error queuing search term '{term}': {e}")
-    finally:
-        conn.close()
+    with db_conn() as conn:
+        try:
+            now = time.time()
+            conn.execute("""
+                INSERT INTO search_terms (term, popularity, last_crawled, queued, created_at)
+                VALUES (?, 1, 0, 1, ?)
+                ON CONFLICT(term) DO UPDATE SET
+                    popularity = popularity + 1,
+                    queued = CASE WHEN last_crawled = 0 THEN 1 ELSE queued END
+            """, (term, now))
+            conn.commit()
+        except Exception as e:
+            logger.error(f"Error queuing search term '{term}': {e}")
 
 
 def get_pending_terms(limit: int = 100) -> list[str]:
     """Get terms that need crawling, prioritized by popularity."""
-    conn = get_conn()
-    try:
-        rows = conn.execute("""
-            SELECT term FROM search_terms
-            WHERE queued = 1 OR (? - last_crawled) / 3600.0 > ?
-            ORDER BY popularity DESC, last_crawled ASC
-            LIMIT ?
-        """, (time.time(), CACHE_TTL_HOURS, limit)).fetchall()
-        return [r["term"] for r in rows]
-    except Exception as e:
-        logger.error(f"Error getting pending terms: {e}")
-        return []
-    finally:
-        conn.close()
+    with db_conn() as conn:
+        try:
+            rows = conn.execute("""
+                SELECT term FROM search_terms
+                WHERE queued = 1 OR (? - last_crawled) / 3600.0 > ?
+                ORDER BY popularity DESC, last_crawled ASC
+                LIMIT ?
+            """, (time.time(), CACHE_TTL_HOURS, limit)).fetchall()
+            return [r["term"] for r in rows]
+        except Exception as e:
+            logger.error(f"Error getting pending terms: {e}")
+            return []
 
 
 def get_db_stats() -> dict:
     """Get stats about the database."""
-    conn = get_conn()
-    try:
-        fig_count = conn.execute("SELECT COUNT(*) as c FROM figurines").fetchone()["c"]
-        term_count = conn.execute("SELECT COUNT(*) as c FROM search_terms").fetchone()["c"]
-        pending = conn.execute("SELECT COUNT(*) as c FROM search_terms WHERE queued = 1").fetchone()["c"]
-        stores = conn.execute("SELECT store, COUNT(*) as c FROM figurines GROUP BY store ORDER BY c DESC").fetchall()
-        return {
-            "figurines": fig_count,
-            "search_terms": term_count,
-            "pending_crawls": pending,
-            "stores": {r["store"]: r["c"] for r in stores},
-        }
-    except Exception as e:
-        logger.error(f"Error getting DB stats: {e}")
-        return {"figurines": 0, "search_terms": 0, "pending_crawls": 0, "stores": {}}
-    finally:
-        conn.close()
+    with db_conn() as conn:
+        try:
+            fig_count = conn.execute("SELECT COUNT(*) as c FROM figurines").fetchone()["c"]
+            term_count = conn.execute("SELECT COUNT(*) as c FROM search_terms").fetchone()["c"]
+            pending = conn.execute("SELECT COUNT(*) as c FROM search_terms WHERE queued = 1").fetchone()["c"]
+            stores = conn.execute("SELECT store, COUNT(*) as c FROM figurines GROUP BY store ORDER BY c DESC").fetchall()
+            return {
+                "figurines": fig_count,
+                "search_terms": term_count,
+                "pending_crawls": pending,
+                "stores": {r["store"]: r["c"] for r in stores},
+            }
+        except Exception as e:
+            logger.error(f"Error getting DB stats: {e}")
+            return {"figurines": 0, "search_terms": 0, "pending_crawls": 0, "stores": {}}

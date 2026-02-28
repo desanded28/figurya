@@ -1,8 +1,6 @@
-import logging
-logger = logging.getLogger("figurya.fetchers")
 import httpx
 from bs4 import BeautifulSoup
-from weebshelf.fetchers.base import BaseFetcher
+from weebshelf.fetchers.base import BaseFetcher, DEFAULT_HEADERS, logger
 from weebshelf.models import Figurine
 from weebshelf.config import MAX_RESULTS_PER_SOURCE
 import re
@@ -13,28 +11,19 @@ class CDJapanFetcher(BaseFetcher):
     name = "CDJapan"
     BASE_URL = "https://www.cdjapan.co.jp"
 
-    HEADERS = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-        "Accept": "text/html",
-    }
-
-    async def search(self, query: str) -> list[Figurine]:
+    async def _fetch(self, query: str) -> list[Figurine]:
         url = f"{self.BASE_URL}/api/products/html"
         params = {
             "q": f"{query} figure",
             "rows": "24",
         }
 
-        try:
-            async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
-                resp = await client.get(url, params=params, headers=self.HEADERS)
-                if resp.status_code != 200:
-                    logger.warning(f"[CDJapan] Status {resp.status_code}")
-                    return []
-                return self._parse_results(resp.text)
-        except Exception as e:
-            logger.error(f"[CDJapan] Error: {e}")
-            return []
+        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+            resp = await client.get(url, params=params, headers={**DEFAULT_HEADERS, "Accept": "text/html"})
+            if resp.status_code != 200:
+                logger.warning(f"[{self.name}] Status {resp.status_code}")
+                return []
+            return self._parse_results(resp.text)
 
     def _parse_results(self, html: str) -> list[Figurine]:
         soup = BeautifulSoup(html, "html.parser")
@@ -44,7 +33,6 @@ class CDJapanFetcher(BaseFetcher):
 
         for item in items[:MAX_RESULTS_PER_SOURCE]:
             try:
-                # Name
                 title_el = item.select_one(".title") or item.select_one("h3") or item.select_one("a.item-wrap")
                 if not title_el:
                     continue
@@ -52,23 +40,15 @@ class CDJapanFetcher(BaseFetcher):
                 if not name:
                     continue
 
-                # Link
                 link = item.select_one("a[href]")
-                href = link.get("href", "") if link else ""
-                if href and not href.startswith("http"):
-                    href = self.BASE_URL + href
+                href = self.make_absolute(link.get("href", "") if link else "", self.BASE_URL)
 
-                # Image
                 img = item.select_one("img[src]")
                 img_src = ""
                 if img:
                     img_src = img.get("src", "") or img.get("data-src", "")
-                    if img_src.startswith("//"):
-                        img_src = "https:" + img_src
-                    elif img_src and not img_src.startswith("http"):
-                        img_src = self.BASE_URL + img_src
+                    img_src = self.make_absolute(img_src, self.BASE_URL)
 
-                # Price
                 price = None
                 price_el = item.select_one("[itemprop=price]")
                 if price_el:
@@ -83,7 +63,6 @@ class CDJapanFetcher(BaseFetcher):
                     if match:
                         price = int(match.group(1).replace(",", ""))
 
-                # Availability
                 status_el = item.select_one(".status")
                 status_text = status_el.get_text(strip=True).lower() if status_el else ""
                 availability = "unknown"
@@ -94,26 +73,20 @@ class CDJapanFetcher(BaseFetcher):
                 elif "pre" in status_text or "order" in status_text:
                     availability = "preorder"
 
-                tags = []
-                name_lower = name.lower()
-                for tag_word in ["nendoroid", "figma", "scale", "prize", "figure", "statue"]:
-                    if tag_word in name_lower:
-                        tags.append(tag_word)
-
                 fig = Figurine(
                     name=name,
                     product_url=href,
                     image_url=img_src,
-                    store="CDJapan",
+                    store=self.name,
                     price=price,
                     currency="JPY",
                     availability=availability,
-                    tags=tags,
+                    tags=self.extract_tags(name),
                     description=name,
                 )
                 figures.append(fig)
             except Exception as e:
-                logger.error(f"[CDJapan] Parse error: {e}")
+                logger.error(f"[{self.name}] Parse error: {e}")
                 continue
 
         return figures
