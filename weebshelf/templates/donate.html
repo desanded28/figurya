@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Figurya — Support Us</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-logo">
+            <img src="/static/logo.svg" alt="Figurya" height="32">
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Search</a>
+            <a href="/donate" class="nav-link active">Donate</a>
+        </div>
+    </nav>
+
+    <div class="donate-page">
+        <div class="donate-hero">
+            <h1>Support <span class="accent">Figurya</span></h1>
+            <p class="donate-sub">Figurya is free and open-source. Donations help keep the servers running and unlock new features.</p>
+        </div>
+
+        <!-- Funding Goal -->
+        <div class="donate-goal">
+            <div class="goal-header">
+                <span class="goal-label">Monthly server goal</span>
+                <span class="goal-amount">$0 / $7</span>
+            </div>
+            <div class="goal-bar">
+                <div class="goal-fill" style="width: 0%"></div>
+            </div>
+            <p class="goal-note">$7/mo covers Render hosting so the site stays online 24/7 without cold starts.</p>
+        </div>
+
+        <!-- Ko-fi Button -->
+        <div class="donate-action">
+            <a href="https://ko-fi.com/" target="_blank" rel="noopener" class="kofi-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z"/></svg>
+                Support on Ko-fi
+            </a>
+            <p class="donate-note">No account needed. One-time or monthly — any amount helps!</p>
+        </div>
+
+        <!-- What donations unlock -->
+        <div class="donate-tiers">
+            <h2>What your donation unlocks</h2>
+            <div class="tier-grid">
+                <div class="tier-card">
+                    <div class="tier-icon">$7<span>/mo</span></div>
+                    <h3>Always Online</h3>
+                    <p>Paid Render hosting — no more cold starts or waiting for the server to wake up.</p>
+                </div>
+                <div class="tier-card">
+                    <div class="tier-icon">$15<span>/mo</span></div>
+                    <h3>More Stores</h3>
+                    <p>Proxy access to unlock AmiAmi, MyFigureCollection, and other Cloudflare-protected sites.</p>
+                </div>
+                <div class="tier-card">
+                    <div class="tier-icon">$25<span>/mo</span></div>
+                    <h3>Smart Search</h3>
+                    <p>AI-powered vibe matching so "dreamy pastel miku" actually finds the right figures.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transparency -->
+        <div class="donate-transparency">
+            <h2>Where the money goes</h2>
+            <div class="cost-list">
+                <div class="cost-item">
+                    <span class="cost-label">Render hosting (always-on)</span>
+                    <span class="cost-value">$7/mo</span>
+                </div>
+                <div class="cost-item">
+                    <span class="cost-label">Proxy service (AmiAmi, MFC access)</span>
+                    <span class="cost-value">~$8/mo</span>
+                </div>
+                <div class="cost-item">
+                    <span class="cost-label">AI API (smart search)</span>
+                    <span class="cost-value">~$10/mo</span>
+                </div>
+                <div class="cost-item">
+                    <span class="cost-label">Domain name (figurya.com)</span>
+                    <span class="cost-value">~$12/yr</span>
+                </div>
+            </div>
+            <p class="transparency-note">Figurya is open-source. Zero profit — every dollar goes to keeping the site running and adding features.</p>
+        </div>
+    </div>
+
+    <footer class="footer">
+        {% if stats %}
+        <span>{{ stats.figurines }} figurines indexed across {{ stats.stores|length }} stores</span>
+        {% endif %}
+        <span>&middot;</span>
+        <span>Figurya v0.1</span>
+    </footer>
+</body>
+</html>

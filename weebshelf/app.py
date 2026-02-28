@@ -59,6 +59,12 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
+@app.get("/donate")
+async def donate(request: Request):
+    stats = get_db_stats()
+    return templates.TemplateResponse("donate.html", {"request": request, "stats": stats})
+
+
 @app.get("/")
 async def home(request: Request, q: str = "", sort: str = "relevance"):
     if not q.strip():
@@ -78,6 +84,7 @@ async def home(request: Request, q: str = "", sort: str = "relevance"):
     # Step 1: Check the database for cached results
     cached = get_cached_results(search_term)
 
+    from_cache = bool(cached)
     if cached:
         figurines = [Figurine(**f) for f in cached]
     else:
@@ -125,6 +132,7 @@ async def home(request: Request, q: str = "", sort: str = "relevance"):
         "parsed": parsed,
         "sort": sort,
         "stats": stats,
+        "from_cache": from_cache,
     })
 
 
