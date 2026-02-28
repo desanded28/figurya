@@ -53,6 +53,95 @@ a {
     font-weight: 500;
 }
 
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-link {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #8888aa;
+    transition: color 0.2s;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: #e0e0e8;
+}
+
+.donate-link {
+    color: #e94560;
+    padding: 5px 14px;
+    border: 1px solid rgba(233, 69, 96, 0.3);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.donate-link:hover {
+    background: rgba(233, 69, 96, 0.1);
+    color: #ff6b8a;
+}
+
+/* ===== COLD START BANNER ===== */
+.cold-start-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 24px;
+    background: rgba(251, 191, 36, 0.08);
+    border-bottom: 1px solid rgba(251, 191, 36, 0.15);
+    font-size: 0.82rem;
+    color: #fbbf24;
+}
+
+.cold-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.cold-dismiss {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #fbbf24;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 4px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.cold-dismiss:hover {
+    opacity: 1;
+}
+
+/* ===== CACHE NOTICE ===== */
+.cache-notice {
+    max-width: 1280px;
+    margin: 16px auto 0;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.06);
+    border-radius: 10px;
+    margin-left: 24px;
+    margin-right: 24px;
+}
+
+.cache-notice strong {
+    font-weight: 600;
+}
+
+.cache-notice svg {
+    flex-shrink: 0;
+    color: #60a5fa;
+}
+
 /* ===== HERO / LANDING ===== */
 .hero {
     display: flex;
@@ -503,6 +592,222 @@ a {
     flex-wrap: wrap;
 }
 
+/* ===== DONATE PAGE ===== */
+.donate-page {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+}
+
+.donate-hero {
+    text-align: center;
+    padding: 60px 0 40px;
+}
+
+.donate-hero h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 12px;
+}
+
+.donate-sub {
+    font-size: 1.05rem;
+    color: #8888aa;
+    line-height: 1.6;
+}
+
+/* Goal bar */
+.donate-goal {
+    background: #13131f;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+}
+
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.goal-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #8888aa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.goal-amount {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e0e0e8;
+}
+
+.goal-bar {
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 100px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.goal-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e94560, #ff6b8a);
+    border-radius: 100px;
+    transition: width 0.6s ease;
+}
+
+.goal-note {
+    font-size: 0.8rem;
+    color: #555570;
+}
+
+/* Ko-fi button */
+.donate-action {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.kofi-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 32px;
+    background: #e94560;
+    color: white;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 700;
+    transition: background 0.2s, transform 0.15s;
+}
+
+.kofi-btn:hover {
+    background: #d63b54;
+    transform: translateY(-2px);
+}
+
+.donate-note {
+    margin-top: 12px;
+    font-size: 0.82rem;
+    color: #555570;
+}
+
+/* Tier cards */
+.donate-tiers {
+    margin-bottom: 48px;
+}
+
+.donate-tiers h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #e0e0e8;
+    margin-bottom: 20px;
+}
+
+.tier-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+.tier-card {
+    background: #13131f;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 24px 20px;
+    text-align: center;
+    transition: border-color 0.25s;
+}
+
+.tier-card:hover {
+    border-color: rgba(233, 69, 96, 0.3);
+}
+
+.tier-icon {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #e94560;
+    margin-bottom: 10px;
+}
+
+.tier-icon span {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #666680;
+}
+
+.tier-card h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #e0e0e8;
+    margin-bottom: 8px;
+}
+
+.tier-card p {
+    font-size: 0.78rem;
+    color: #666680;
+    line-height: 1.5;
+}
+
+/* Transparency costs */
+.donate-transparency {
+    margin-bottom: 32px;
+}
+
+.donate-transparency h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #e0e0e8;
+    margin-bottom: 20px;
+}
+
+.cost-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: #13131f;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.cost-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.cost-item:last-child {
+    border-bottom: none;
+}
+
+.cost-label {
+    font-size: 0.85rem;
+    color: #aaaacc;
+}
+
+.cost-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4ade80;
+}
+
+.transparency-note {
+    font-size: 0.8rem;
+    color: #555570;
+    text-align: center;
+    font-style: italic;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .navbar {
@@ -550,6 +855,15 @@ a {
 
     .search-header {
         padding: 0 16px;
+    }
+
+    .tier-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cache-notice {
+        margin-left: 16px;
+        margin-right: 16px;
     }
 }
 

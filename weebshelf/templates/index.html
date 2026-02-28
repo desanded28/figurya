@@ -15,13 +15,23 @@
         <a href="/" class="nav-logo">
             <img src="/static/logo.svg" alt="Figurya" height="32">
         </a>
-        {% if stats %}
-        <div class="nav-stats">
-            <span class="stat-pill">{{ stats.figurines }} figures</span>
-            <span class="stat-pill">{{ stats.stores|length }} stores</span>
+        <div class="nav-right">
+            {% if stats %}
+            <div class="nav-stats">
+                <span class="stat-pill">{{ stats.figurines }} figures</span>
+                <span class="stat-pill">{{ stats.stores|length }} stores</span>
+            </div>
+            {% endif %}
+            <a href="/donate" class="nav-link donate-link">&hearts; Donate</a>
         </div>
-        {% endif %}
     </nav>
+
+    <!-- Render cold start banner (hidden by default, shown via JS) -->
+    <div class="cold-start-banner" id="coldBanner" style="display:none">
+        <span class="cold-icon">&#9889;</span>
+        <span>Figurya is waking up — free hosting spins down after inactivity. Should be ready in a few seconds!</span>
+        <button class="cold-dismiss" onclick="document.getElementById('coldBanner').style.display='none'">&times;</button>
+    </div>
 
     {% if not query %}
     <!-- HERO / LANDING -->
@@ -85,6 +95,13 @@
             </div>
         </form>
     </div>
+
+    {% if not from_cache and results %}
+    <div class="cache-notice">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <span>This was a <strong>new search</strong> — results were fetched live from all stores. Next time it'll be instant from cache!</span>
+    </div>
+    {% endif %}
 
     <div class="results-toolbar">
         <div class="results-info">
@@ -168,5 +185,21 @@
         <span>&middot;</span>
         <span>Figurya v0.1</span>
     </footer>
+    <script>
+    // Detect Render cold start: if page took >4s to load, show the banner next visit
+    (function() {
+        var loadTime = performance.timing.responseEnd - performance.timing.requestStart;
+        if (loadTime > 4000) {
+            // This load was slow — it was a cold start, banner would've been useful
+            sessionStorage.setItem('figurya_cold', '1');
+        }
+        // Show banner if we flagged a cold start and haven't dismissed it
+        if (sessionStorage.getItem('figurya_cold') === '1') {
+            var b = document.getElementById('coldBanner');
+            if (b) { b.style.display = 'flex'; }
+            sessionStorage.removeItem('figurya_cold');
+        }
+    })();
+    </script>
 </body>
 </html>
