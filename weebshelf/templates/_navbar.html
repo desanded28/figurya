@@ -1,0 +1,17 @@
+<nav class="navbar">
+    <a href="/" class="nav-logo">
+        <img src="/static/logo.svg" alt="Figurya" height="32">
+    </a>
+    <button class="nav-hamburger" id="navHamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+    </button>
+    <div class="nav-right" id="navRight">
+        {% if stats %}
+        <div class="nav-stats">
+            <span class="stat-pill">{{ stats.figurines }} figures</span>
+            <span class="stat-pill">{{ stats.stores|length }} stores</span>
+        </div>
+        {% endif %}
+        <a href="/donate" class="nav-link donate-link">&hearts; Donate</a>
+    </div>
+</nav>

@@ -20,7 +20,7 @@ from weebshelf.fetchers.ninnin import NinNinFetcher
 from weebshelf.fetchers.amazon import AmazonFetcher
 from weebshelf.ranker import rank_results
 from weebshelf.reviews import summarize_reviews
-from weebshelf.database import get_cached_results, queue_search_term, store_search_results, get_conn, get_db_stats
+from weebshelf.database import get_cached_results, queue_search_term, store_search_results, db_conn, get_db_stats
 from weebshelf.crawler import crawler_loop, run_initial_crawl
 from weebshelf.models import Figurine
 
@@ -161,11 +161,8 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
 
         # Store in the proper database
         if figurines:
-            conn = get_conn()
-            try:
+            with db_conn() as conn:
                 store_search_results(conn, search_term, [f.model_dump() for f in figurines])
-            finally:
-                conn.close()
         else:
             # Queue the term so the crawler picks it up next cycle
             queue_search_term(search_term)

@@ -1,7 +1,5 @@
-import logging
-logger = logging.getLogger("figurya.fetchers")
 import httpx
-from weebshelf.fetchers.base import BaseFetcher
+from weebshelf.fetchers.base import BaseFetcher, JSON_HEADERS, logger
 from weebshelf.models import Figurine
 from weebshelf.config import MAX_RESULTS_PER_SOURCE
 
@@ -11,12 +9,7 @@ class NinNinFetcher(BaseFetcher):
     name = "Nin-Nin Game"
     BASE_URL = "https://www.nin-nin-game.com"
 
-    HEADERS = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-        "Accept": "application/json",
-    }
-
-    async def search(self, query: str) -> list[Figurine]:
+    async def _fetch(self, query: str) -> list[Figurine]:
         url = f"{self.BASE_URL}/en/search"
         params = {
             "ajaxSearch": "1",
@@ -24,16 +17,12 @@ class NinNinFetcher(BaseFetcher):
             "q": query,
         }
 
-        try:
-            async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
-                resp = await client.get(url, params=params, headers=self.HEADERS)
-                if resp.status_code != 200:
-                    logger.warning(f"[NinNin] Status {resp.status_code}")
-                    return []
-                return self._parse_results(resp.json())
-        except Exception as e:
-            logger.error(f"[NinNin] Error: {e}")
-            return []
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            resp = await client.get(url, params=params, headers=JSON_HEADERS)
+            if resp.status_code != 200:
+                logger.warning(f"[{self.name}] Status {resp.status_code}")
+                return []
+            return self._parse_results(resp.json())
 
     def _parse_results(self, data) -> list[Figurine]:
         figures = []
@@ -45,30 +34,20 @@ class NinNinFetcher(BaseFetcher):
                 if not name:
                     continue
 
-                image_url = product.get("image_link", "")
-                product_url = product.get("product_link", "")
-
-                # NinNin autocomplete doesn't include price
-                tags = []
-                name_lower = name.lower()
-                for tag_word in ["nendoroid", "figma", "scale", "prize", "figure", "statue"]:
-                    if tag_word in name_lower:
-                        tags.append(tag_word)
-
                 fig = Figurine(
                     name=name,
-                    product_url=product_url,
-                    image_url=image_url,
-                    store="Nin-Nin Game",
+                    product_url=product.get("product_link", ""),
+                    image_url=product.get("image_link", ""),
+                    store=self.name,
                     price=None,
                     currency="GBP",
                     availability="unknown",
-                    tags=tags,
+                    tags=self.extract_tags(name),
                     description=name,
                 )
                 figures.append(fig)
             except Exception as e:
-                logger.error(f"[NinNin] Parse error: {e}")
+                logger.error(f"[{self.name}] Parse error: {e}")
                 continue
 
         return figures

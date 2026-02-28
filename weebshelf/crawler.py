@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from weebshelf.database import get_conn, store_search_results, get_pending_terms, get_db_stats
+from weebshelf.database import db_conn, store_search_results, get_pending_terms, get_db_stats
 from weebshelf.config import REQUEST_DELAY
 
 logger = logging.getLogger("figurya.crawler")
@@ -22,37 +22,32 @@ SEED_TERMS = [
 async def crawl_term(fetchers: list, term: str):
     """Crawl all sources for a single search term and store results."""
     logger.info(f"Crawling: {term}")
-    conn = get_conn()
 
     all_figurines = []
 
-    try:
-        for fetcher in fetchers:
-            try:
-                results = await fetcher.search(term)
-                if results:
-                    logger.info(f"  [{fetcher.name}] {len(results)} results")
-                    for fig in results:
-                        all_figurines.append(fig.model_dump())
-                # Delay between fetchers to be polite
-                await asyncio.sleep(REQUEST_DELAY)
-            except Exception as e:
-                logger.error(f"  [{fetcher.name}] Error: {e}")
+    for fetcher in fetchers:
+        try:
+            results = await fetcher.search(term)
+            if results:
+                logger.info(f"  [{fetcher.name}] {len(results)} results")
+                for fig in results:
+                    all_figurines.append(fig.model_dump())
+            await asyncio.sleep(REQUEST_DELAY)
+        except Exception as e:
+            logger.error(f"  [{fetcher.name}] Error: {e}")
 
-        if all_figurines:
+    if all_figurines:
+        with db_conn() as conn:
             store_search_results(conn, term, all_figurines)
-            logger.info(f"  Stored {len(all_figurines)} figurines for '{term}'")
-        else:
-            logger.info(f"  No results for '{term}'")
-    finally:
-        conn.close()
+        logger.info(f"  Stored {len(all_figurines)} figurines for '{term}'")
+    else:
+        logger.info(f"  No results for '{term}'")
 
 
 async def run_crawl_cycle(fetchers: list, max_terms: int = 100):
     """Run one full crawl cycle — process all pending/stale terms."""
     # Seed the database with popular terms if empty
-    conn = get_conn()
-    try:
+    with db_conn() as conn:
         term_count = conn.execute("SELECT COUNT(*) as c FROM search_terms").fetchone()["c"]
         if term_count == 0:
             logger.info("Seeding database with popular terms...")
@@ -63,8 +58,6 @@ async def run_crawl_cycle(fetchers: list, max_terms: int = 100):
                     VALUES (?, 10, 0, 1, ?)
                 """, (term, now))
             conn.commit()
-    finally:
-        conn.close()
 
     # Get terms that need crawling
     pending = get_pending_terms(limit=max_terms)
@@ -103,11 +96,8 @@ async def crawler_loop(fetchers: list, interval_hours: float = 12):
 
 async def run_initial_crawl(fetchers: list):
     """Run a quick initial crawl with just a few top terms to populate the DB fast."""
-    conn = get_conn()
-    try:
+    with db_conn() as conn:
         fig_count = conn.execute("SELECT COUNT(*) as c FROM figurines").fetchone()["c"]
-    finally:
-        conn.close()
 
     if fig_count > 0:
         logger.info(f"DB already has {fig_count} figurines, skipping initial crawl")

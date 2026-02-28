@@ -1,7 +1,5 @@
-import logging
-logger = logging.getLogger("figurya.fetchers")
 import httpx
-from weebshelf.fetchers.base import BaseFetcher
+from weebshelf.fetchers.base import BaseFetcher, JSON_HEADERS, logger
 from weebshelf.models import Figurine
 from weebshelf.config import MAX_RESULTS_PER_SOURCE
 
@@ -11,12 +9,7 @@ class SolarisFetcher(BaseFetcher):
     name = "Solaris Japan"
     BASE_URL = "https://solarisjapan.com"
 
-    HEADERS = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-        "Accept": "application/json",
-    }
-
-    async def search(self, query: str) -> list[Figurine]:
+    async def _fetch(self, query: str) -> list[Figurine]:
         url = f"{self.BASE_URL}/search/suggest.json"
         params = {
             "q": query,
@@ -24,16 +17,12 @@ class SolarisFetcher(BaseFetcher):
             "resources[limit]": "10",
         }
 
-        try:
-            async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
-                resp = await client.get(url, params=params, headers=self.HEADERS)
-                if resp.status_code != 200:
-                    logger.warning(f"[Solaris] Status {resp.status_code}")
-                    return []
-                return self._parse_results(resp.json())
-        except Exception as e:
-            logger.error(f"[Solaris] Error: {e}")
-            return []
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            resp = await client.get(url, params=params, headers=JSON_HEADERS)
+            if resp.status_code != 200:
+                logger.warning(f"[{self.name}] Status {resp.status_code}")
+                return []
+            return self._parse_results(resp.json())
 
     def _parse_results(self, data: dict) -> list[Figurine]:
         figures = []
@@ -56,36 +45,25 @@ class SolarisFetcher(BaseFetcher):
                 if price == 0:
                     price = None
 
-                image_url = product.get("image", "")
-                if image_url and image_url.startswith("//"):
-                    image_url = "https:" + image_url
-
-                rel_url = product.get("url", "")
-                product_url = self.BASE_URL + rel_url if rel_url.startswith("/") else rel_url
+                image_url = self.make_absolute(product.get("image", ""), self.BASE_URL)
+                product_url = self.make_absolute(product.get("url", ""), self.BASE_URL)
 
                 available = product.get("available", True)
-
-                tags = []
-                name_lower = name.lower()
-                for tag_word in ["nendoroid", "figma", "scale", "prize", "pop up parade",
-                                 "figure", "statue", "pvc"]:
-                    if tag_word in name_lower:
-                        tags.append(tag_word)
 
                 fig = Figurine(
                     name=name,
                     product_url=product_url,
                     image_url=image_url,
-                    store="Solaris Japan",
+                    store=self.name,
                     price=price,
                     currency="USD",
                     availability="in_stock" if available else "sold_out",
-                    tags=tags,
+                    tags=self.extract_tags(name),
                     description=name,
                 )
                 figures.append(fig)
             except Exception as e:
-                logger.error(f"[Solaris] Parse error: {e}")
+                logger.error(f"[{self.name}] Parse error: {e}")
                 continue
 
         return figures
