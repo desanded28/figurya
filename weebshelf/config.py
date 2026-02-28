@@ -14,6 +14,13 @@ STORE_RELIABILITY = {
     "BigBadToyStore": 0.8,
     "Amazon": 0.6,
     "eBay": 0.5,
+    "Suruga-ya": 0.85,
+    "Plaza Japan": 0.8,
+    "Navito World": 0.8,
+    "Otaku Republic": 0.75,
+    "Good Smile": 0.9,
+    "Kotobukiya": 0.9,
+    "Animate": 0.85,
     "default": 0.5,
 }
 

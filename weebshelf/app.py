@@ -12,7 +12,7 @@ import asyncio
 # ── SEO Constants ─────────────────────────────────────────────
 SITE_URL = "https://figuryaa.onrender.com"
 SITE_NAME = "Figurya"
-DEFAULT_DESCRIPTION = "Search anime figurines across 8 stores at once. Compare prices, find deals, and discover figures by character, style, or vibe. Free and open-source."
+DEFAULT_DESCRIPTION = "Search anime figurines across 15 stores at once. Compare prices, find deals, and discover figures by character, style, or vibe. Free and open-source."
 DEFAULT_OG_TITLE = "Figurya — Anime Figurine Search Engine"
 
 from weebshelf.query import parse_query, build_search_terms
@@ -24,6 +24,13 @@ from weebshelf.fetchers.cdjapan import CDJapanFetcher
 from weebshelf.fetchers.hobbygenki import HobbyGenkiFetcher
 from weebshelf.fetchers.ninnin import NinNinFetcher
 from weebshelf.fetchers.amazon import AmazonFetcher
+from weebshelf.fetchers.surugaya import SurugayaFetcher
+from weebshelf.fetchers.plaza import PlazaJapanFetcher
+from weebshelf.fetchers.navito import NavitoFetcher
+from weebshelf.fetchers.otakurepublic import OtakuRepublicFetcher
+from weebshelf.fetchers.goodsmile import GoodSmileFetcher
+from weebshelf.fetchers.kotobukiya import KotobukiyaFetcher
+from weebshelf.fetchers.animate import AnimateFetcher
 from weebshelf.ranker import rank_results
 from weebshelf.reviews import summarize_reviews
 from weebshelf.database import get_cached_results, queue_search_term, store_search_results, db_conn, get_db_stats
@@ -54,6 +61,13 @@ FETCHERS = [
     HobbyGenkiFetcher(),
     NinNinFetcher(),
     AmazonFetcher(),
+    SurugayaFetcher(),
+    PlazaJapanFetcher(),
+    NavitoFetcher(),
+    OtakuRepublicFetcher(),
+    GoodSmileFetcher(),
+    KotobukiyaFetcher(),
+    AnimateFetcher(),
 ]
 
 crawler_task = None
@@ -252,7 +266,7 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
         "has_more": has_more,
         "page": page,
         "total_results": total_results,
-        "meta_description": f"Found {total_results} anime figurines for \"{q}\" across 8 stores. Compare prices and availability from AmiAmi, Solaris Japan, HobbySearch, and more.",
+        "meta_description": f"Found {total_results} anime figurines for \"{q}\" across 15 stores. Compare prices and availability from AmiAmi, Solaris Japan, HobbySearch, and more.",
         "og_title": f"{q} — Figurine Search Results | Figurya",
         "canonical_url": f"{SITE_URL}/?q={q}",
     })
@@ -269,7 +283,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         return templates.TemplateResponse("404.html", {
             "request": request,
             "stats": stats,
-            "meta_description": "Page not found. Search anime figurines across 8 stores on Figurya.",
+            "meta_description": "Page not found. Search anime figurines across 15 stores on Figurya.",
             "og_title": "Page Not Found | Figurya",
             "canonical_url": SITE_URL,
         }, status_code=404)
@@ -288,7 +302,7 @@ async def catch_all(request: Request, path: str):
     return templates.TemplateResponse("404.html", {
         "request": request,
         "stats": stats,
-        "meta_description": "Page not found. Search anime figurines across 8 stores on Figurya.",
+        "meta_description": "Page not found. Search anime figurines across 15 stores on Figurya.",
         "og_title": "Page Not Found | Figurya",
         "canonical_url": SITE_URL,
     }, status_code=404)

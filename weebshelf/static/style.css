@@ -319,38 +319,6 @@ a {
     color: var(--accent-light);
 }
 
-/* ===== COLD START BANNER ===== */
-.cold-start-banner {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 24px;
-    background: var(--yellow-bg);
-    border-bottom: 1px solid rgba(251, 191, 36, 0.15);
-    font-size: 0.82rem;
-    color: var(--yellow);
-}
-
-.cold-icon {
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-
-.cold-dismiss {
-    margin-left: auto;
-    background: none;
-    border: none;
-    color: var(--yellow);
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 0 4px;
-    opacity: 0.6;
-    transition: opacity 0.2s;
-}
-
-.cold-dismiss:hover {
-    opacity: 1;
-}
 
 /* ===== CACHE NOTICE ===== */
 .cache-notice {
@@ -1502,8 +1470,6 @@ a {
     .footer-meta { font-size: 0.62rem; }
 
     .cache-notice { margin: 10px 10px 0; padding: 6px 10px; font-size: 0.72rem; }
-    .cold-start-banner { padding: 8px 12px; font-size: 0.75rem; }
-
     .donate-page { padding: 0 12px 32px; }
     .donate-hero h1 { font-size: 1.3rem; }
     .donate-sub { font-size: 0.82rem; }
