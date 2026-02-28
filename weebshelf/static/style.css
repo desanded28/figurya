@@ -578,18 +578,166 @@ a {
     font-size: 0.95rem;
 }
 
-/* ===== FOOTER ===== */
-.footer {
+/* ===== SITE FOOTER ===== */
+.site-footer {
     margin-top: auto;
-    padding: 20px 24px;
-    text-align: center;
-    font-size: 0.75rem;
-    color: #444460;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background: #0a0a12;
+}
+
+.footer-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 24px 32px;
+    display: grid;
+    grid-template-columns: 1.2fr 1.4fr 0.8fr;
+    gap: 40px;
+}
+
+.footer-logo {
+    display: block;
+    margin-bottom: 14px;
+    opacity: 0.8;
+}
+
+.footer-about {
+    font-size: 0.8rem;
+    color: #666680;
+    line-height: 1.65;
+}
+
+.footer-col h4 {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #aaaacc;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Feedback form */
+.feedback-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.feedback-input {
+    width: 100%;
+    padding: 10px 12px;
+    background: #151522;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: #e0e0e8;
+    font-size: 0.82rem;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.feedback-input:focus {
+    border-color: #e94560;
+}
+
+.feedback-input::placeholder {
+    color: #44445a;
+}
+
+.feedback-row {
+    display: flex;
+    gap: 8px;
+}
+
+.feedback-email {
+    flex: 1;
+    padding: 8px 12px;
+    background: #151522;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: #e0e0e8;
+    font-size: 0.78rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.feedback-email:focus {
+    border-color: #e94560;
+}
+
+.feedback-email::placeholder {
+    color: #44445a;
+}
+
+.feedback-btn {
+    padding: 8px 20px;
+    background: #e94560;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.feedback-btn:hover {
+    background: #d63b54;
+}
+
+/* Footer links */
+.footer-links {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.footer-links a {
+    font-size: 0.82rem;
+    color: #8888aa;
+    transition: color 0.2s;
+}
+
+.footer-links a:hover {
+    color: #e94560;
+}
+
+/* Bottom bar */
+.footer-bottom {
     border-top: 1px solid rgba(255, 255, 255, 0.04);
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 24px;
+}
+
+.footer-disclaimers {
+    margin-bottom: 16px;
+}
+
+.footer-disclaimers p {
+    font-size: 0.7rem;
+    color: #444460;
+    line-height: 1.6;
+    margin-bottom: 6px;
+}
+
+.footer-disclaimers p:last-child {
+    margin-bottom: 0;
+}
+
+.footer-meta {
     display: flex;
     justify-content: center;
     gap: 6px;
     flex-wrap: wrap;
+    font-size: 0.72rem;
+    color: #444460;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 /* ===== DONATE PAGE ===== */
@@ -864,6 +1012,16 @@ a {
     .cache-notice {
         margin-left: 16px;
         margin-right: 16px;
+    }
+
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        padding: 32px 16px 24px;
+    }
+
+    .footer-bottom {
+        padding: 16px;
     }
 }
 
