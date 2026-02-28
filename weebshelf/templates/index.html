@@ -3,111 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Figurya - Figurine Search</title>
+    <title>Figurya{% if query %} — {{ query }}{% endif %}</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="header">
-        <h1>Figurya</h1>
-        <p>Find the perfect figurine. Search by character, style, or vibe.</p>
-    </div>
+    <nav class="navbar">
+        <a href="/" class="nav-logo">
+            <img src="/static/logo.svg" alt="Figurya" height="32">
+        </a>
+        {% if stats %}
+        <div class="nav-stats">
+            <span class="stat-pill">{{ stats.figurines }} figures</span>
+            <span class="stat-pill">{{ stats.stores|length }} stores</span>
+        </div>
+        {% endif %}
+    </nav>
 
-    <div class="search-section">
-        <form class="search-form" action="/" method="get">
-            <input
-                type="text"
-                name="q"
-                class="search-input"
-                placeholder="Try: pink miku, gothic rem, cute nendoroid..."
-                value="{{ query or '' }}"
-                autofocus
-            >
-            <button type="submit" class="search-btn">Search</button>
-        </form>
-        <div class="search-tips">
-            Tip: Add colors (pink, dark), styles (girly, gothic, cute), or types (nendoroid, figma, prize)
+    {% if not query %}
+    <!-- HERO / LANDING -->
+    <div class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Find your next <span class="accent">grail</span></h1>
+            <p class="hero-sub">Search across 8 stores by character, style, or vibe.</p>
+
+            <form class="search-form hero-search" action="/" method="get">
+                <div class="search-wrapper">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input type="text" name="q" class="search-input" placeholder="Try &quot;pink miku&quot;, &quot;gothic rem&quot;, &quot;cute nendoroid&quot;..." autofocus>
+                    <button type="submit" class="search-btn">Search</button>
+                </div>
+            </form>
+
+            <div class="hero-tags">
+                <span class="tag-label">Popular:</span>
+                <a href="/?q=miku" class="tag">miku</a>
+                <a href="/?q=rem" class="tag">rem</a>
+                <a href="/?q=zero+two" class="tag">zero two</a>
+                <a href="/?q=gojo" class="tag">gojo</a>
+                <a href="/?q=anya" class="tag">anya</a>
+                <a href="/?q=nendoroid" class="tag">nendoroid</a>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">8</div>
+                <div class="feature-text">
+                    <strong>Stores</strong>
+                    <span>Searched simultaneously</span>
+                </div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">&hearts;</div>
+                <div class="feature-text">
+                    <strong>Vibe Search</strong>
+                    <span>Colors, styles, aesthetics</span>
+                </div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">$</div>
+                <div class="feature-text">
+                    <strong>Compare</strong>
+                    <span>Prices across all stores</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    {% if query %}
-    <div class="sort-bar">
-        <span>Sort by:</span>
-        <a href="/?q={{ query }}&sort=relevance" class="sort-chip {{ 'active' if sort == 'relevance' }}">Relevance</a>
-        <a href="/?q={{ query }}&sort=price_low" class="sort-chip {{ 'active' if sort == 'price_low' }}">Price: Low</a>
-        <a href="/?q={{ query }}&sort=price_high" class="sort-chip {{ 'active' if sort == 'price_high' }}">Price: High</a>
-        <a href="/?q={{ query }}&sort=rating" class="sort-chip {{ 'active' if sort == 'rating' }}">Rating</a>
+    {% else %}
+    <!-- SEARCH RESULTS -->
+    <div class="search-header">
+        <form class="search-form" action="/" method="get">
+            <div class="search-wrapper">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" name="q" class="search-input" placeholder="Search figurines..." value="{{ query or '' }}" autofocus>
+                <button type="submit" class="search-btn">Search</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="results-toolbar">
+        <div class="results-info">
+            {% if results %}
+            <span class="results-count">{{ results|length }} results</span>
+            <span class="results-query">for "{{ query }}"</span>
+            {% if parsed and parsed.colors %}
+                {% for c in parsed.colors %}<span class="filter-pill color">{{ c }}</span>{% endfor %}
+            {% endif %}
+            {% if parsed and parsed.aesthetics %}
+                {% for a in parsed.aesthetics %}<span class="filter-pill style">{{ a }}</span>{% endfor %}
+            {% endif %}
+            {% else %}
+            <span class="results-count">No results</span>
+            <span class="results-query">for "{{ query }}"</span>
+            {% endif %}
+        </div>
+        <div class="sort-options">
+            <a href="/?q={{ query }}&sort=relevance" class="sort-btn {{ 'active' if sort == 'relevance' }}">Relevance</a>
+            <a href="/?q={{ query }}&sort=price_low" class="sort-btn {{ 'active' if sort == 'price_low' }}">Price &darr;</a>
+            <a href="/?q={{ query }}&sort=price_high" class="sort-btn {{ 'active' if sort == 'price_high' }}">Price &uarr;</a>
+            <a href="/?q={{ query }}&sort=rating" class="sort-btn {{ 'active' if sort == 'rating' }}">Rating</a>
+        </div>
     </div>
 
     {% if results %}
-    <div class="results-info">
-        Found {{ results|length }} figurines for "{{ query }}"
-        {% if parsed and parsed.colors %} | Colors: {{ parsed.colors|join(', ') }}{% endif %}
-        {% if parsed and parsed.aesthetics %} | Style: {{ parsed.aesthetics|join(', ') }}{% endif %}
-    </div>
-
     <div class="results-grid">
         {% for r in results %}
-        <div class="card">
-            <div class="card-img-wrapper">
+        <a href="{{ r.figurine.product_url or '#' }}" target="_blank" rel="noopener" class="card">
+            <div class="card-img">
                 {% if r.figurine.image_url %}
                 <img src="{{ r.figurine.image_url }}" alt="{{ r.figurine.name }}" loading="lazy">
                 {% else %}
-                <span class="no-img">No image</span>
+                <div class="no-img">No image</div>
+                {% endif %}
+                <span class="card-store">{{ r.figurine.store }}</span>
+                {% if r.figurine.availability == 'in_stock' %}
+                <span class="card-avail avail-stock">In Stock</span>
+                {% elif r.figurine.availability == 'preorder' %}
+                <span class="card-avail avail-pre">Pre-order</span>
+                {% elif r.figurine.availability == 'sold_out' %}
+                <span class="card-avail avail-out">Sold Out</span>
                 {% endif %}
             </div>
             <div class="card-body">
-                <div class="card-title">{{ r.figurine.name }}</div>
-                <div class="card-meta">
-                    <span class="badge badge-store">{{ r.figurine.store }}</span>
+                <h3 class="card-title">{{ r.figurine.name }}</h3>
+                <div class="card-bottom">
                     {% if r.figurine.price is not none %}
-                    <span class="badge badge-price">{{ r.figurine.display_price }}</span>
+                    <span class="card-price">{{ r.figurine.display_price }}</span>
+                    {% else %}
+                    <span class="card-price muted">Price N/A</span>
                     {% endif %}
-                    <span class="badge badge-score">Score: {{ (r.final_score * 100)|int }}%</span>
+                    {% if r.keyword_matches %}
+                    <div class="card-matches">
+                        {% for m in r.keyword_matches[:2] %}
+                        <span class="match-tag">{{ m }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
-                {% if r.keyword_matches %}
-                <div class="card-meta">
-                    {% for m in r.keyword_matches[:3] %}
-                    <span class="badge badge-match">{{ m }}</span>
-                    {% endfor %}
-                </div>
-                {% endif %}
                 {% if r.review_summary %}
-                <div class="card-review">{{ r.review_summary }}</div>
-                {% endif %}
-                {% if r.figurine.product_url %}
-                <a href="{{ r.figurine.product_url }}" target="_blank" rel="noopener" class="card-link">View on {{ r.figurine.store }} &rarr;</a>
+                <p class="card-review">{{ r.review_summary }}</p>
                 {% endif %}
             </div>
-        </div>
+        </a>
         {% endfor %}
     </div>
-
     {% else %}
     <div class="empty-state">
-        <h2>No results found</h2>
+        <h2>Nothing found</h2>
         <p>Try a different character name or broader search terms.</p>
     </div>
     {% endif %}
-
-    {% else %}
-    <div class="empty-state">
-        <h2>Search for your favorite characters</h2>
-        <p>Type a character name, add colors or styles, and find the perfect figurine.</p>
-    </div>
     {% endif %}
 
-    {% if stats %}
-    <div class="db-stats">
-        <span>DB: {{ stats.figurines }} figurines cached</span>
-        <span>|</span>
-        <span>{{ stats.search_terms }} search terms</span>
-        {% if stats.pending_crawls > 0 %}
-        <span>|</span>
-        <span>{{ stats.pending_crawls }} queued for crawl</span>
+    <footer class="footer">
+        {% if stats %}
+        <span>{{ stats.figurines }} figurines indexed across {{ stats.stores|length }} stores</span>
+        {% if stats.pending_crawls > 0 %}<span>&middot;</span><span>{{ stats.pending_crawls }} queued</span>{% endif %}
         {% endif %}
-        <span>|</span>
-        <span>{{ stats.stores|length }} stores</span>
-    </div>
-    {% endif %}
+        <span>&middot;</span>
+        <span>Figurya v0.1</span>
+    </footer>
 </body>
 </html>
