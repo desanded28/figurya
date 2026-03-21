@@ -1,82 +1,25 @@
 # Figurya
 
-Search figurines across 15 stores by character, style, or vibe.
+Figurya searches 15 Japanese figurine stores at once and ranks results by relevance, price, and seller reliability. You can search by character name, or throw in vibe words like "gothic rem" or "pink miku girly" and it'll parse out the aesthetics, colors, and scales to filter results.
 
-## What it does
+## Stack
 
-Figurya is a free, open-source figurine search engine. Type a character name with optional aesthetic descriptors (like "pink miku girly" or "gothic rem") and get results from 15 stores ranked by relevance, price, and seller reliability.
+FastAPI, BeautifulSoup, httpx, Pydantic, SQLite (WAL mode), Jinja2
 
-### Stores searched
-HobbySearch, HobbyLink Japan, Solaris Japan, Tokyo Otaku Mode, CDJapan, Hobby Genki, Nin-Nin Game, Amazon, Suruga-ya, Plaza Japan, Navito World, Otaku Republic, Good Smile Company, Kotobukiya, Animate
-
-### Features
-- **Vibe search** — colors, aesthetics, and styles are parsed from your query
-- **Price comparison** — see prices across all stores at once
-- **Smart ranking** — results scored by relevance, price, availability, and store reliability
-- **Review summaries** — community opinions condensed into key positives/negatives
-- **Background crawling** — popular terms are pre-cached for instant results
-
-## Run locally
+## Running it
 
 ```bash
-# Clone
-git clone https://github.com/desanded28/figurya.git
-cd figurya
-
-# Set up venv
-python3 -m venv venv
-source venv/bin/activate
-
-# Install
+git clone https://github.com/desanded28/figurya.git && cd figurya
 pip install -r requirements.txt
-
-# Run
 uvicorn weebshelf.app:app --reload
 ```
 
-Visit `http://localhost:8000`
+Open `http://localhost:8000`. For deploy, there's a `render.yaml` included.
 
-## Deploy to Render
+## How it works
 
-1. Push to GitHub
-2. Create a new **Web Service** on [Render](https://render.com)
-3. Connect your GitHub repo
-4. Set build command: `pip install -r requirements.txt`
-5. Set start command: `uvicorn weebshelf.app:app --host 0.0.0.0 --port $PORT`
-6. Set Python version to 3.11
-
-Or use the included `render.yaml` for one-click deploy.
-
-## Tech stack
-
-- **FastAPI** + Jinja2 templates
-- **httpx** — async HTTP client for parallel store fetching
-- **BeautifulSoup** — HTML parsing
-- **SQLite** (WAL mode) — caching with 24h TTL
-- **Pydantic** — data models
-
-## Project structure
-
-```
-weebshelf/
-    app.py              # FastAPI routes + rate limiting
-    models.py           # Figurine, Review, SearchResult
-    query.py            # Query parser (colors, aesthetics, scales)
-    ranker.py           # Composite scoring
-    reviews.py          # Sentiment summarization
-    database.py         # SQLite cache
-    crawler.py          # Background crawl loop
-    config.py           # Settings + store reliability scores
-    fetchers/           # One file per store
-    templates/           # Jinja2 HTML
-    static/             # CSS, logo, favicon
-```
-
-## Support
-
-Figurya is free. Donations help keep the server running:
-[ko-fi.com/figurya](https://ko-fi.com/figurya)
-
-## License
-
-MIT
+- 15 async scrapers run in parallel via httpx (HobbySearch, HLJ, Solaris, TOM, CDJapan, etc.)
+- Query parser pulls out colors, aesthetics, and figure scales from natural language input
+- Results get a composite score based on relevance match, price, availability, and store reliability ratings
+- SQLite cache with 24h TTL so repeated searches don't hammer the stores
+- Background crawler pre-caches popular search terms
