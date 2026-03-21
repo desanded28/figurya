@@ -7,7 +7,6 @@ import re
 
 
 class AmazonFetcher(BaseFetcher):
-    """Fetches figurine data from Amazon.com search results."""
     name = "Amazon"
     BASE_URL = "https://www.amazon.com"
 

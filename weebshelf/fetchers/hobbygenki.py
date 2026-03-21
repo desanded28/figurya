@@ -7,7 +7,6 @@ import re
 
 
 class HobbyGenkiFetcher(BaseFetcher):
-    """Fetches figurine data from Hobby Genki (PrestaShop SSR)."""
     name = "Hobby Genki"
     BASE_URL = "https://hobby-genki.com"
 

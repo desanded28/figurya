@@ -31,7 +31,8 @@ class Figurine(BaseModel):
         if self.currency == "USD":
             return self.price
         if self.currency == "JPY":
-            return round(self.price / 150, 2)  # rough conversion
+            # rough conversion, not worth an API call for display prices
+            return round(self.price / 150, 2)
         return self.price
 
     @property
@@ -44,7 +45,6 @@ class Figurine(BaseModel):
 
     @property
     def safe_product_url(self) -> str:
-        """Return product_url only if it uses a safe protocol."""
         url = self.product_url or ""
         if url.startswith(("http://", "https://")):
             return url
@@ -52,7 +52,6 @@ class Figurine(BaseModel):
 
     @property
     def safe_image_url(self) -> str:
-        """Return image_url only if it uses a safe protocol."""
         url = self.image_url or ""
         if url.startswith(("http://", "https://", "//")):
             return url

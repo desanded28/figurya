@@ -7,7 +7,6 @@ import re
 
 
 class KotobukiyaFetcher(BaseFetcher):
-    """Fetches figurine data from Kotobukiya online shop."""
     name = "Kotobukiya"
     BASE_URL = "https://www.kotobukiya.co.jp"
 

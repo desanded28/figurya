@@ -11,7 +11,7 @@ TAG_WORDS = [
     "completed", "plamo",
 ]
 
-# Shared browser-like headers
+# most stores block default python-requests UA
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -26,16 +26,13 @@ JSON_HEADERS = {
 
 
 class BaseFetcher(ABC):
-    """Base class for all store fetchers with shared utilities."""
     name: str = "base"
 
     @abstractmethod
     async def _fetch(self, query: str) -> list[Figurine]:
-        """Subclasses implement this to do the actual fetching."""
         pass
 
     async def search(self, query: str) -> list[Figurine]:
-        """Wraps _fetch with standardized error handling and logging."""
         try:
             results = await self._fetch(query)
             if results:
@@ -47,7 +44,6 @@ class BaseFetcher(ABC):
 
     @staticmethod
     def extract_tags(name: str, extra_tags: list[str] | None = None) -> list[str]:
-        """Extract figurine type tags from a product name."""
         tags = []
         name_lower = name.lower()
         for tag_word in TAG_WORDS:
@@ -59,7 +55,6 @@ class BaseFetcher(ABC):
 
     @staticmethod
     def make_absolute(url: str, base_url: str) -> str:
-        """Ensure a URL is absolute."""
         if not url:
             return ""
         if url.startswith("//"):

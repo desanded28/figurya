@@ -7,7 +7,6 @@ import re
 
 
 class AnimateFetcher(BaseFetcher):
-    """Fetches figurine data from Animate online shop."""
     name = "Animate"
     BASE_URL = "https://www.animate-onlineshop.jp"
 

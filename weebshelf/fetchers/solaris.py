@@ -5,7 +5,6 @@ from weebshelf.config import MAX_RESULTS_PER_SOURCE
 
 
 class SolarisFetcher(BaseFetcher):
-    """Fetches figurine data from Solaris Japan (Shopify JSON API)."""
     name = "Solaris Japan"
     BASE_URL = "https://solarisjapan.com"
 

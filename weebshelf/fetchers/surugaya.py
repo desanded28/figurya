@@ -7,7 +7,6 @@ import re
 
 
 class SurugayaFetcher(BaseFetcher):
-    """Fetches figurine data from Suruga-ya (pre-owned figures)."""
     name = "Suruga-ya"
     BASE_URL = "https://www.suruga-ya.com"
 

@@ -73,10 +73,9 @@ def rank_results(figurines: list[Figurine], parsed_query: dict) -> list[SearchRe
         relevance, matches = compute_keyword_relevance(fig, parsed_query)
         reliability = get_reliability(fig.store)
 
-        # Price competitiveness (normalized, lower is better)
-        price_score = 0.5  # default for unknown price
+        # TODO: $300 cap is arbitrary, should probably be configurable
+        price_score = 0.5
         if fig.price_usd is not None:
-            # Rough normalization: $0 = 1.0, $300+ = 0.0
             price_score = max(0, 1.0 - (fig.price_usd / 300))
 
         # Availability score
@@ -86,6 +85,7 @@ def rank_results(figurines: list[Figurine], parsed_query: dict) -> list[SearchRe
         # Community rating (0-10 -> 0-1)
         rating_score = (fig.rating / 10) if fig.rating else 0.5
 
+        # relevance first, price secondary since not all stores report it
         final = (
             0.35 * relevance
             + 0.25 * reliability

@@ -8,7 +8,6 @@ import json
 
 
 class PlazaJapanFetcher(BaseFetcher):
-    """Fetches figurine data from Plaza Japan (BigCommerce)."""
     name = "Plaza Japan"
     BASE_URL = "https://www.plazajapan.com"
 

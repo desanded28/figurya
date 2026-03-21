@@ -7,7 +7,6 @@ import re
 
 
 class OtakuRepublicFetcher(BaseFetcher):
-    """Fetches figurine data from Otaku Republic."""
     name = "Otaku Republic"
     BASE_URL = "https://otakurepublic.com"
 

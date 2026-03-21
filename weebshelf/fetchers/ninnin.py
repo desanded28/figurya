@@ -5,7 +5,6 @@ from weebshelf.config import MAX_RESULTS_PER_SOURCE
 
 
 class NinNinFetcher(BaseFetcher):
-    """Fetches figurine data from Nin-Nin Game (autocomplete JSON API)."""
     name = "Nin-Nin Game"
     BASE_URL = "https://www.nin-nin-game.com"
 
