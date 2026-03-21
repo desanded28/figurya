@@ -7,7 +7,6 @@ import re
 
 
 class GoodSmileFetcher(BaseFetcher):
-    """Fetches figurine data from Good Smile Company."""
     name = "Good Smile"
     BASE_URL = "https://www.goodsmile.info"
 

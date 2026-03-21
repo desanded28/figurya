@@ -1,3 +1,4 @@
+from collections import Counter
 from weebshelf.models import Review
 
 POSITIVE_WORDS = {
@@ -32,13 +33,10 @@ def summarize_reviews(reviews: list[Review]) -> str:
     parts = []
 
     if positives:
-        # Count and get top 3 most mentioned positive aspects
-        from collections import Counter
         top_pos = [w for w, _ in Counter(positives).most_common(3)]
         parts.append(f"Praised for: {', '.join(top_pos)}")
 
     if negatives:
-        from collections import Counter
         top_neg = [w for w, _ in Counter(negatives).most_common(3)]
         parts.append(f"Criticized for: {', '.join(top_neg)}")
 

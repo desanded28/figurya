@@ -2,17 +2,7 @@ from weebshelf.config import COLORS, AESTHETICS, SCALES
 
 
 def parse_query(raw_query: str) -> dict:
-    """Parse a user query into structured components.
-
-    Example: "pink miku girly nendoroid" ->
-    {
-        "raw": "pink miku girly nendoroid",
-        "character": "miku",
-        "colors": ["pink"],
-        "aesthetics": ["girly"],
-        "scales": ["nendoroid"],
-    }
-    """
+    """Split query into character, colors, aesthetics, and scale types."""
     # Sanitize: truncate, normalize whitespace
     import unicodedata
     raw_query = unicodedata.normalize("NFKC", raw_query)[:200]

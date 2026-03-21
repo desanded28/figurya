@@ -5,7 +5,6 @@ from weebshelf.config import MAX_RESULTS_PER_SOURCE
 
 
 class TOMFetcher(BaseFetcher):
-    """Fetches figurine data from Tokyo Otaku Mode (JSON API)."""
     name = "Tokyo Otaku Mode"
     BASE_URL = "https://otakumode.com"
 

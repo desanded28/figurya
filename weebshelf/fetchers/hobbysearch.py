@@ -7,7 +7,6 @@ import re
 
 
 class HobbySearchFetcher(BaseFetcher):
-    """Fetches figurine data from HobbySearch (1999.co.jp)."""
     name = "HobbySearch"
     BASE_URL = "https://www.1999.co.jp"
 

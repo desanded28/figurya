@@ -13,24 +13,20 @@ DB_PATH = Path(__file__).parent.parent / "weebshelf.db"
 
 @contextmanager
 def db_conn():
-    """Context manager for database connections. Auto-closes on exit."""
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
-    _init_tables(conn)
     try:
         yield conn
     finally:
         conn.close()
 
 
-def get_conn() -> sqlite3.Connection:
-    """Get a raw connection (use db_conn() context manager instead when possible)."""
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    _init_tables(conn)
-    return conn
+# TODO: move init to app startup instead of every connection
+def init_db():
+    """Create tables if they don't exist. Call once at startup."""
+    with db_conn() as conn:
+        _init_tables(conn)
 
 
 def _init_tables(conn: sqlite3.Connection):
@@ -79,10 +75,8 @@ def _init_tables(conn: sqlite3.Connection):
     """)
 
 
-# --- Figurine operations ---
 
 def upsert_figurine(conn: sqlite3.Connection, fig_data: dict) -> int:
-    """Insert or update a figurine. Returns the figurine id."""
     now = time.time()
 
     # Sanitize tags
@@ -131,7 +125,6 @@ def upsert_figurine(conn: sqlite3.Connection, fig_data: dict) -> int:
 
 
 def store_search_results(conn: sqlite3.Connection, term: str, figurines: list[dict]):
-    """Store a batch of figurines linked to a search term."""
     now = time.time()
     try:
         conn.execute("""
@@ -162,7 +155,6 @@ def store_search_results(conn: sqlite3.Connection, term: str, figurines: list[di
         logger.error(f"Error storing search results for '{term}': {e}")
 
 
-# --- Search operations ---
 
 def get_cached_results(term: str) -> list[dict] | None:
     """Get cached figurines for a search term if fresh enough."""
@@ -236,7 +228,6 @@ def get_pending_terms(limit: int = 100) -> list[str]:
 
 
 def get_db_stats() -> dict:
-    """Get stats about the database."""
     with db_conn() as conn:
         try:
             fig_count = conn.execute("SELECT COUNT(*) as c FROM figurines").fetchone()["c"]

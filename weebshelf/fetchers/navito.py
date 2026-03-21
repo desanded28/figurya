@@ -5,7 +5,6 @@ from weebshelf.config import MAX_RESULTS_PER_SOURCE
 
 
 class NavitoFetcher(BaseFetcher):
-    """Fetches figurine data from Navito World (Shopify JSON API)."""
     name = "Navito World"
     BASE_URL = "https://navitoworld.com"
 

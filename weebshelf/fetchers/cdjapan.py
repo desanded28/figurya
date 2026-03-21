@@ -7,7 +7,6 @@ import re
 
 
 class CDJapanFetcher(BaseFetcher):
-    """Fetches figurine data from CDJapan (HTML fragment API)."""
     name = "CDJapan"
     BASE_URL = "https://www.cdjapan.co.jp"
 

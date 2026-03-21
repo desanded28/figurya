@@ -9,15 +9,15 @@ from fastapi.templating import Jinja2Templates
 from pathlib import Path
 import asyncio
 
-# ── SEO Constants ─────────────────────────────────────────────
+# ---
 SITE_URL = "https://figuryaa.onrender.com"
 SITE_NAME = "Figurya"
 DEFAULT_DESCRIPTION = "Search anime figurines across 15 stores at once. Compare prices, find deals, and discover figures by character, style, or vibe. Free and open-source."
 DEFAULT_OG_TITLE = "Figurya — Anime Figurine Search Engine"
 
 from weebshelf.query import parse_query, build_search_terms
-from weebshelf.fetchers.mfc import HobbySearchFetcher
-from weebshelf.fetchers.amiami import HLJFetcher
+from weebshelf.fetchers.hobbysearch import HobbySearchFetcher
+from weebshelf.fetchers.hlj import HLJFetcher
 from weebshelf.fetchers.solaris import SolarisFetcher
 from weebshelf.fetchers.tom import TOMFetcher
 from weebshelf.fetchers.cdjapan import CDJapanFetcher
@@ -33,11 +33,10 @@ from weebshelf.fetchers.kotobukiya import KotobukiyaFetcher
 from weebshelf.fetchers.animate import AnimateFetcher
 from weebshelf.ranker import rank_results
 from weebshelf.reviews import summarize_reviews
-from weebshelf.database import get_cached_results, queue_search_term, store_search_results, db_conn, get_db_stats
+from weebshelf.database import get_cached_results, queue_search_term, store_search_results, db_conn, get_db_stats, init_db
 from weebshelf.crawler import crawler_loop, run_initial_crawl
 from weebshelf.models import Figurine
 
-# ── Logging setup ──────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
@@ -45,7 +44,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger("figurya")
 
-# ── Constants ──────────────────────────────────────────────────
 VALID_SORTS = {"relevance", "price_low", "price_high", "rating"}
 MAX_QUERY_LENGTH = 200
 RESULTS_PER_PAGE = 50
@@ -72,14 +70,22 @@ FETCHERS = [
 
 crawler_task = None
 
-# ── Simple in-memory rate limiter ──────────────────────────────
 rate_limit_store: dict[str, list[float]] = defaultdict(list)
 
 
+_last_purge = 0.0
+
 def is_rate_limited(ip: str) -> bool:
-    """Check if an IP has exceeded the rate limit."""
+    global _last_purge
     now = time.time()
-    # Clean old entries
+
+    # purge stale IPs every hour so the dict doesn't grow forever
+    if now - _last_purge > 3600:
+        stale = [k for k, v in rate_limit_store.items() if not v or now - v[-1] > RATE_LIMIT_WINDOW]
+        for k in stale:
+            del rate_limit_store[k]
+        _last_purge = now
+
     rate_limit_store[ip] = [t for t in rate_limit_store[ip] if now - t < RATE_LIMIT_WINDOW]
     if len(rate_limit_store[ip]) >= RATE_LIMIT_MAX:
         return True
@@ -87,7 +93,6 @@ def is_rate_limited(ip: str) -> bool:
     return False
 
 
-# ── Lifespan ───────────────────────────────────────────────────
 async def _background_startup():
     """Run initial crawl + start crawler loop, all in background."""
     await run_initial_crawl(FETCHERS)
@@ -97,7 +102,7 @@ async def _background_startup():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global crawler_task
-    # Start crawling in background — don't block server startup
+    init_db()
     crawler_task = asyncio.create_task(_background_startup())
     yield
     # Shutdown gracefully
@@ -109,7 +114,6 @@ async def lifespan(app: FastAPI):
             logger.info("Crawler task cancelled on shutdown")
 
 
-# ── App setup ──────────────────────────────────────────────────
 app = FastAPI(title="Figurya", lifespan=lifespan)
 
 BASE_DIR = Path(__file__).parent
@@ -117,7 +121,6 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
-# ── SEO Routes ────────────────────────────────────────────────
 @app.get("/robots.txt", response_class=PlainTextResponse)
 async def robots_txt():
     return """User-agent: *
@@ -152,7 +155,6 @@ async def sitemap_xml():
     return PlainTextResponse(content=xml, media_type="application/xml")
 
 
-# ── Routes ─────────────────────────────────────────────────────
 @app.get("/donate")
 async def donate(request: Request):
     stats = get_db_stats()
@@ -272,7 +274,6 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
     })
 
 
-# ── Custom error handlers ─────────────────────────────────────
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
@@ -295,7 +296,6 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     )
 
 
-# ── Catch-all for unmatched routes ────────────────────────────
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def catch_all(request: Request, path: str):
     stats = get_db_stats()
@@ -309,7 +309,6 @@ async def catch_all(request: Request, path: str):
 
 
 def main():
-    """Entry point for the CLI script."""
     import uvicorn
     uvicorn.run("weebshelf.app:app", host="127.0.0.1", port=8000, reload=True)
 
