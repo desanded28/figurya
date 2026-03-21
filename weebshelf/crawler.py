@@ -104,7 +104,7 @@ async def run_initial_crawl(fetchers: list):
         return
 
     logger.info("Running initial crawl with top terms...")
-    # TODO: maybe fetch these in parallel instead of sequentially
+    # Sequential to avoid hammering stores on first boot
     quick_terms = SEED_TERMS[:10]
 
     for i, term in enumerate(quick_terms):

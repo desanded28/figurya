@@ -1,19 +1,18 @@
+import asyncio
 import logging
 import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
+from pathlib import Path
+
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pathlib import Path
-import asyncio
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
 
-# ---
 SITE_URL = "https://figuryaa.onrender.com"
-SITE_NAME = "Figurya"
-DEFAULT_DESCRIPTION = "Search anime figurines across 15 stores at once. Compare prices, find deals, and discover figures by character, style, or vibe. Free and open-source."
-DEFAULT_OG_TITLE = "Figurya — Anime Figurine Search Engine"
 
 from weebshelf.query import parse_query, build_search_terms
 from weebshelf.fetchers.hobbysearch import HobbySearchFetcher
@@ -173,10 +172,14 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
     client_ip = request.client.host if request.client else "unknown"
     if is_rate_limited(client_ip):
         logger.warning(f"Rate limited IP: {client_ip}")
-        return HTMLResponse(
-            content="<h1>Too many requests</h1><p>Please wait a moment before searching again.</p>",
-            status_code=429,
-        )
+        stats = get_db_stats()
+        return templates.TemplateResponse("429.html", {
+            "request": request,
+            "stats": stats,
+            "meta_description": "Too many requests. Please wait a moment before searching again.",
+            "og_title": "Slow Down | Figurya",
+            "canonical_url": SITE_URL,
+        }, status_code=429)
 
     # ── Input validation ──
     q = q[:MAX_QUERY_LENGTH]  # Silently truncate overly long queries
@@ -184,6 +187,8 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
         sort = "relevance"
     if page < 1:
         page = 1
+
+    search_start = time.time()
 
     if not q.strip():
         stats = get_db_stats()
@@ -257,6 +262,9 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
 
     stats = get_db_stats()
 
+    search_time = time.time() - search_start
+    logger.info(f'Search for "{q}" took {search_time:.2f}s ({total_results} results)')
+
     return templates.TemplateResponse("index.html", {
         "request": request,
         "query": q,
@@ -268,13 +276,23 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
         "has_more": has_more,
         "page": page,
         "total_results": total_results,
+        "search_time": round(search_time, 2),
         "meta_description": f"Found {total_results} anime figurines for \"{q}\" across 15 stores. Compare prices and availability from AmiAmi, Solaris Japan, HobbySearch, and more.",
         "og_title": f"{q} — Figurine Search Results | Figurya",
         "canonical_url": f"{SITE_URL}/?q={q}",
     })
 
 
-from starlette.exceptions import HTTPException as StarletteHTTPException
+class StaticCacheMiddleware(BaseHTTPMiddleware):
+    """Add Cache-Control headers for static assets."""
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=3600"
+        return response
+
+
+app.add_middleware(StaticCacheMiddleware)
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -290,6 +308,14 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         }, status_code=404)
     if exc.status_code == 500:
         logger.error(f"Internal server error: {exc.detail}")
+        stats = get_db_stats()
+        return templates.TemplateResponse("500.html", {
+            "request": request,
+            "stats": stats,
+            "meta_description": "Something went wrong. Please try again.",
+            "og_title": "Error | Figurya",
+            "canonical_url": SITE_URL,
+        }, status_code=500)
     return HTMLResponse(
         content=f"<h1>Error {exc.status_code}</h1><p>{exc.detail or 'Something went wrong.'}</p>",
         status_code=exc.status_code,

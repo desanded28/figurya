@@ -91,6 +91,7 @@
             {% if results %}
             <span class="results-count">{{ total_results }} results</span>
             <span class="results-query">for "{{ query }}"</span>
+            {% if search_time %}<span class="results-time">in {{ search_time }}s</span>{% endif %}
             {% if parsed and parsed.colors %}
                 {% for c in parsed.colors %}<span class="filter-pill color">{{ c }}</span>{% endfor %}
             {% endif %}
@@ -162,8 +163,21 @@
 
     {% else %}
     <div class="empty-state">
-        <h2>Nothing found</h2>
-        <p>Try a different character name or broader search terms.</p>
+        <h2>No results for "{{ query }}"</h2>
+        <p>We searched all 15 stores and came up empty. A few things to try:</p>
+        <ul class="empty-suggestions">
+            <li>Use the character's full name (e.g. "hatsune miku" instead of just "miku figure")</li>
+            <li>Remove filters like colors or styles and search more broadly</li>
+            <li>Check the spelling, or try the Japanese name</li>
+        </ul>
+        <div class="empty-popular">
+            <span class="tag-label">Popular searches:</span>
+            <a href="/?q=miku" class="tag">miku</a>
+            <a href="/?q=rem" class="tag">rem</a>
+            <a href="/?q=zero+two" class="tag">zero two</a>
+            <a href="/?q=gojo" class="tag">gojo</a>
+            <a href="/?q=anya" class="tag">anya</a>
+        </div>
     </div>
     {% endif %}
     {% endif %}

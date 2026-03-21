@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include '_head.html' %}
+    <title>Something Went Wrong | Figurya — Anime Figurine Search Engine</title>
+</head>
+<body>
+    {% include '_navbar.html' %}
+
+    <div class="error-page">
+        <div class="error-code">500</div>
+        <h1>Something went wrong</h1>
+        <p>Our servers hit an issue. Try again in a moment, or search for something else.</p>
+        <a href="/" class="error-btn">Back to search</a>
+    </div>
+
+    {% include '_footer_minimal.html' %}
+
+    {% include '_scripts.html' %}
+</body>
+</html>
