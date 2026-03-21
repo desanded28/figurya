@@ -1,5 +1,5 @@
 from weebshelf.models import Figurine, SearchResult
-from weebshelf.config import STORE_RELIABILITY
+from weebshelf.config import STORE_RELIABILITY, PRICE_SCORE_CAP_USD
 
 
 def compute_keyword_relevance(figurine: Figurine, parsed_query: dict) -> tuple[float, list[str]]:
@@ -73,10 +73,9 @@ def rank_results(figurines: list[Figurine], parsed_query: dict) -> list[SearchRe
         relevance, matches = compute_keyword_relevance(fig, parsed_query)
         reliability = get_reliability(fig.store)
 
-        # TODO: $300 cap is arbitrary, should probably be configurable
         price_score = 0.5
         if fig.price_usd is not None:
-            price_score = max(0, 1.0 - (fig.price_usd / 300))
+            price_score = max(0, 1.0 - (fig.price_usd / PRICE_SCORE_CAP_USD))
 
         # Availability score
         avail_map = {"in_stock": 1.0, "preorder": 0.8, "unknown": 0.4, "sold_out": 0.1}

@@ -749,7 +749,41 @@ a {
     font-weight: 700;
 }
 
-.empty-state p { font-size: 0.95rem; }
+.empty-state p { font-size: 0.95rem; margin-bottom: 16px; }
+
+.empty-suggestions {
+    list-style: none;
+    padding: 0;
+    margin: 16px auto 24px;
+    max-width: 480px;
+    text-align: left;
+}
+
+.empty-suggestions li {
+    padding: 6px 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.empty-suggestions li::before {
+    content: "\2022";
+    margin-right: 8px;
+    color: var(--accent);
+}
+
+.empty-popular {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.results-time {
+    color: var(--text-faint);
+    font-size: 0.85rem;
+}
 
 /* ===== SITE FOOTER ===== */
 .site-footer {
@@ -1177,10 +1211,7 @@ a {
 .error-code {
     font-size: 6rem;
     font-weight: 800;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--accent);
     line-height: 1;
     margin-bottom: 12px;
 }

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include '_head.html' %}
+    <title>Too Many Requests | Figurya — Anime Figurine Search Engine</title>
+</head>
+<body>
+    {% include '_navbar.html' %}
+
+    <div class="error-page">
+        <div class="error-code">429</div>
+        <h1>Slow down there, collector!</h1>
+        <p>You've made too many searches in a short time. Wait a minute and try again.</p>
+        <a href="/" class="error-btn">Back to search</a>
+    </div>
+
+    {% include '_footer_minimal.html' %}
+
+    {% include '_scripts.html' %}
+</body>
+</html>

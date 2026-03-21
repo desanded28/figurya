@@ -22,7 +22,6 @@ def db_conn():
         conn.close()
 
 
-# TODO: move init to app startup instead of every connection
 def init_db():
     """Create tables if they don't exist. Call once at startup."""
     with db_conn() as conn:

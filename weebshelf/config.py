@@ -44,5 +44,7 @@ SCALES = {
     "nendoroid", "figma", "prize", "pop up parade", "scale",
 }
 
+PRICE_SCORE_CAP_USD = 300  # figurines at or above this price get a 0 price score
+
 REQUEST_DELAY = 3  # seconds between requests to same domain
 MAX_RESULTS_PER_SOURCE = 30
