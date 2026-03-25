@@ -550,20 +550,30 @@ async def admin_dashboard(request: Request):
         except Exception as e:
             logger.error(f"Admin image cache stats failed: {e}")
 
-        return templates.TemplateResponse("admin.html", {
-            "request": request,
-            "stats": stats,
-            "stores": stores_data,
-            "recent_searches": searches_data,
-            "cache_fresh": cache_fresh,
-            "cache_stale": cache_stale,
-            "img_cache_count": img_cache_count,
-            "img_cache_size_mb": round(img_cache_size_mb, 1),
-            "fetcher_count": len(FETCHERS),
-        })
+        # Render template explicitly so errors are caught by try/except
+        # (TemplateResponse renders lazily, bypassing our error handling)
+        import traceback as tb
+        try:
+            template = templates.get_template("admin.html")
+            html = template.render(
+                request=request,
+                stats=stats,
+                stores=stores_data,
+                recent_searches=searches_data,
+                cache_fresh=cache_fresh,
+                cache_stale=cache_stale,
+                img_cache_count=img_cache_count,
+                img_cache_size_mb=round(img_cache_size_mb, 1),
+                fetcher_count=len(FETCHERS),
+            )
+            return HTMLResponse(html)
+        except Exception as e:
+            logger.error(f"Admin template render error: {tb.format_exc()}")
+            return HTMLResponse(f"<h1>Admin Template Error</h1><pre>{tb.format_exc()}</pre>", status_code=500)
     except Exception as e:
-        logger.error(f"Admin dashboard error: {e}")
-        return HTMLResponse(f"<h1>Admin Error</h1><pre>{e}</pre>", status_code=500)
+        import traceback as tb
+        logger.error(f"Admin dashboard error: {tb.format_exc()}")
+        return HTMLResponse(f"<h1>Admin Error</h1><pre>{tb.format_exc()}</pre>", status_code=500)
 
 
 class StaticCacheMiddleware(BaseHTTPMiddleware):
@@ -576,6 +586,17 @@ class StaticCacheMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(StaticCacheMiddleware)
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Catch ALL unhandled exceptions so we see the actual error."""
+    import traceback
+    logger.error(f"Unhandled exception on {request.url.path}: {traceback.format_exc()}")
+    return HTMLResponse(
+        content=f"<h1>Server Error</h1><pre>{traceback.format_exc()}</pre>",
+        status_code=500,
+    )
 
 
 @app.exception_handler(StarletteHTTPException)
