@@ -167,8 +167,7 @@ async def sitemap_xml():
 @app.get("/donate")
 async def donate(request: Request):
     stats = get_db_stats()
-    return templates.TemplateResponse("donate.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "donate.html", {
         "stats": stats,
         "meta_description": "Support Figurya with a donation. Help keep the anime figurine search engine free, fast, and online for all collectors.",
         "og_title": "Support Figurya — Help Keep It Free",
@@ -183,8 +182,7 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
     if is_rate_limited(client_ip):
         logger.warning(f"Rate limited IP: {client_ip}")
         stats = get_db_stats()
-        return templates.TemplateResponse("429.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "429.html", {
             "stats": stats,
             "meta_description": "Too many requests. Please wait a moment before searching again.",
             "og_title": "Slow Down | Figurya",
@@ -202,8 +200,7 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
 
     if not q.strip():
         stats = get_db_stats()
-        return templates.TemplateResponse("index.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "index.html", {
             "query": "",
             "results": [],
             "parsed": None,
@@ -275,8 +272,7 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
     search_time = time.time() - search_start
     logger.info(f'Search for "{q}" took {search_time:.2f}s ({total_results} results)')
 
-    return templates.TemplateResponse("index.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "index.html", {
         "query": q,
         "results": paginated,
         "parsed": parsed,
@@ -382,7 +378,7 @@ def _check_admin(request: Request) -> bool:
 async def admin_login_page(request: Request):
     if _check_admin(request):
         return RedirectResponse("/admin", status_code=302)
-    return templates.TemplateResponse("admin_login.html", {"request": request})
+    return templates.TemplateResponse(request, "admin_login.html")
 
 
 @app.post("/admin/login")
@@ -394,8 +390,8 @@ async def admin_login_submit(request: Request):
         response = RedirectResponse("/admin", status_code=302)
         response.set_cookie("figurya_admin", token, httponly=True, max_age=86400 * 7)
         return response
-    return templates.TemplateResponse("admin_login.html", {
-        "request": request, "error": "Wrong password",
+    return templates.TemplateResponse(request, "admin_login.html", {
+        "error": "Wrong password",
     })
 
 
@@ -603,8 +599,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404:
         stats = get_db_stats()
-        return templates.TemplateResponse("404.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "404.html", {
             "stats": stats,
             "meta_description": "Page not found. Search anime figurines across 15 stores on Figurya.",
             "og_title": "Page Not Found | Figurya",
@@ -613,8 +608,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 500:
         logger.error(f"Internal server error: {exc.detail}")
         stats = get_db_stats()
-        return templates.TemplateResponse("500.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "500.html", {
             "stats": stats,
             "meta_description": "Something went wrong. Please try again.",
             "og_title": "Error | Figurya",
@@ -629,8 +623,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def catch_all(request: Request, path: str):
     stats = get_db_stats()
-    return templates.TemplateResponse("404.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "404.html", {
         "stats": stats,
         "meta_description": "Page not found. Search anime figurines across 15 stores on Figurya.",
         "og_title": "Page Not Found | Figurya",
