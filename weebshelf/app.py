@@ -404,78 +404,101 @@ async def admin_dashboard(request: Request):
     if not _check_admin(request):
         return RedirectResponse("/admin/login", status_code=302)
 
-    stats = get_db_stats()
+    try:
+        stats = get_db_stats()
 
-    with db_conn() as conn:
-        # Store health: last results per store
-        store_health = conn.execute("""
-            SELECT store, COUNT(*) as total,
-                   SUM(CASE WHEN price IS NOT NULL THEN 1 ELSE 0 END) as with_price,
-                   SUM(CASE WHEN image_url != '' THEN 1 ELSE 0 END) as with_image,
-                   MAX(last_updated) as last_seen
-            FROM figurines
-            GROUP BY store
-            ORDER BY total DESC
-        """).fetchall()
+        stores_data = []
+        searches_data = []
+        cache_fresh = 0
+        cache_stale = 0
 
-        # Recent searches
-        recent_searches = conn.execute("""
-            SELECT term, popularity, last_crawled
-            FROM search_terms
-            ORDER BY last_crawled DESC
-            LIMIT 20
-        """).fetchall()
+        with db_conn() as conn:
+            # Store health: last results per store
+            try:
+                store_health = conn.execute("""
+                    SELECT store, COUNT(*) as total,
+                           SUM(CASE WHEN price IS NOT NULL THEN 1 ELSE 0 END) as with_price,
+                           SUM(CASE WHEN image_url != '' THEN 1 ELSE 0 END) as with_image,
+                           MAX(last_updated) as last_seen
+                    FROM figurines
+                    GROUP BY store
+                    ORDER BY total DESC
+                """).fetchall()
 
-        # Cache stats
-        cache_fresh = conn.execute("""
-            SELECT COUNT(*) as c FROM search_terms
-            WHERE (? - last_crawled) / 3600.0 <= 24
-        """, (time.time(),)).fetchone()["c"]
+                now = time.time()
+                for row in store_health:
+                    age_hours = (now - row["last_seen"]) / 3600 if row["last_seen"] else 999
+                    status = "healthy" if age_hours < 48 else "stale" if age_hours < 168 else "dead"
+                    stores_data.append({
+                        "name": row["store"],
+                        "total": row["total"],
+                        "with_price": row["with_price"],
+                        "with_image": row["with_image"],
+                        "age_hours": round(age_hours, 1),
+                        "status": status,
+                    })
+            except Exception as e:
+                logger.error(f"Admin store health query failed: {e}")
 
-        cache_stale = conn.execute("""
-            SELECT COUNT(*) as c FROM search_terms
-            WHERE (? - last_crawled) / 3600.0 > 24
-        """, (time.time(),)).fetchone()["c"]
+            # Recent searches
+            try:
+                recent_searches = conn.execute("""
+                    SELECT term, popularity, last_crawled
+                    FROM search_terms
+                    ORDER BY last_crawled DESC
+                    LIMIT 20
+                """).fetchall()
 
-    # Compute health status per store
-    now = time.time()
-    stores_data = []
-    for row in store_health:
-        age_hours = (now - row["last_seen"]) / 3600 if row["last_seen"] else 999
-        status = "healthy" if age_hours < 48 else "stale" if age_hours < 168 else "dead"
-        stores_data.append({
-            "name": row["store"],
-            "total": row["total"],
-            "with_price": row["with_price"],
-            "with_image": row["with_image"],
-            "age_hours": round(age_hours, 1),
-            "status": status,
+                now = time.time()
+                for row in recent_searches:
+                    age = (now - row["last_crawled"]) / 3600 if row["last_crawled"] else 0
+                    searches_data.append({
+                        "term": row["term"],
+                        "popularity": row["popularity"],
+                        "age_hours": round(age, 1),
+                    })
+            except Exception as e:
+                logger.error(f"Admin recent searches query failed: {e}")
+
+            # Cache stats
+            try:
+                cache_fresh = conn.execute("""
+                    SELECT COUNT(*) as c FROM search_terms
+                    WHERE (? - last_crawled) / 3600.0 <= 24
+                """, (time.time(),)).fetchone()["c"]
+
+                cache_stale = conn.execute("""
+                    SELECT COUNT(*) as c FROM search_terms
+                    WHERE (? - last_crawled) / 3600.0 > 24
+                """, (time.time(),)).fetchone()["c"]
+            except Exception as e:
+                logger.error(f"Admin cache stats query failed: {e}")
+
+        # Image cache stats
+        img_cache_count = 0
+        img_cache_size_mb = 0.0
+        try:
+            if IMG_CACHE_DIR.exists():
+                files = [f for f in IMG_CACHE_DIR.iterdir() if f.is_file()]
+                img_cache_count = len(files)
+                img_cache_size_mb = sum(f.stat().st_size for f in files) / 1_000_000
+        except Exception as e:
+            logger.error(f"Admin image cache stats failed: {e}")
+
+        return templates.TemplateResponse("admin.html", {
+            "request": request,
+            "stats": stats,
+            "stores": stores_data,
+            "recent_searches": searches_data,
+            "cache_fresh": cache_fresh,
+            "cache_stale": cache_stale,
+            "img_cache_count": img_cache_count,
+            "img_cache_size_mb": round(img_cache_size_mb, 1),
+            "fetcher_count": len(FETCHERS),
         })
-
-    searches_data = []
-    for row in recent_searches:
-        age = (now - row["last_crawled"]) / 3600 if row["last_crawled"] else 0
-        searches_data.append({
-            "term": row["term"],
-            "popularity": row["popularity"],
-            "age_hours": round(age, 1),
-        })
-
-    # Image cache stats
-    img_cache_count = len(list(IMG_CACHE_DIR.iterdir())) if IMG_CACHE_DIR.exists() else 0
-    img_cache_size_mb = sum(f.stat().st_size for f in IMG_CACHE_DIR.iterdir() if f.is_file()) / 1_000_000 if IMG_CACHE_DIR.exists() else 0
-
-    return templates.TemplateResponse("admin.html", {
-        "request": request,
-        "stats": stats,
-        "stores": stores_data,
-        "recent_searches": searches_data,
-        "cache_fresh": cache_fresh,
-        "cache_stale": cache_stale,
-        "img_cache_count": img_cache_count,
-        "img_cache_size_mb": round(img_cache_size_mb, 1),
-        "fetcher_count": len(FETCHERS),
-    })
+    except Exception as e:
+        logger.error(f"Admin dashboard error: {e}")
+        return HTMLResponse(f"<h1>Admin Error</h1><pre>{e}</pre>", status_code=500)
 
 
 class StaticCacheMiddleware(BaseHTTPMiddleware):
