@@ -399,6 +399,71 @@ async def admin_login_submit(request: Request):
     })
 
 
+@app.get("/admin/debug")
+async def admin_debug():
+    """Temporary debug endpoint to diagnose admin 500 on Render."""
+    import traceback
+    errors = []
+    info = {}
+
+    try:
+        stats = get_db_stats()
+        info["stats"] = stats
+    except Exception as e:
+        errors.append(f"get_db_stats: {traceback.format_exc()}")
+
+    try:
+        with db_conn() as conn:
+            rows = conn.execute("SELECT COUNT(*) as c FROM figurines").fetchone()
+            info["figurines_count"] = rows["c"]
+    except Exception as e:
+        errors.append(f"figurines query: {traceback.format_exc()}")
+
+    try:
+        with db_conn() as conn:
+            rows = conn.execute("SELECT COUNT(*) as c FROM search_terms").fetchone()
+            info["search_terms_count"] = rows["c"]
+    except Exception as e:
+        errors.append(f"search_terms query: {traceback.format_exc()}")
+
+    try:
+        info["img_cache_exists"] = IMG_CACHE_DIR.exists()
+        if IMG_CACHE_DIR.exists():
+            files = list(IMG_CACHE_DIR.iterdir())
+            info["img_cache_files"] = len(files)
+    except Exception as e:
+        errors.append(f"img_cache: {traceback.format_exc()}")
+
+    try:
+        info["fetcher_count"] = len(FETCHERS)
+        info["template_dir"] = str(BASE_DIR / "templates")
+        info["template_exists"] = (BASE_DIR / "templates" / "admin.html").exists()
+    except Exception as e:
+        errors.append(f"misc: {traceback.format_exc()}")
+
+    # Try actually rendering the template
+    try:
+        from starlette.testclient import TestClient
+        stats = get_db_stats()
+        html = templates.get_template("admin.html").render(
+            request=None,
+            stats=stats,
+            stores=[],
+            recent_searches=[],
+            cache_fresh=0,
+            cache_stale=0,
+            img_cache_count=0,
+            img_cache_size_mb=0,
+            fetcher_count=len(FETCHERS),
+        )
+        info["template_renders"] = True
+    except Exception as e:
+        errors.append(f"template render: {traceback.format_exc()}")
+        info["template_renders"] = False
+
+    return JSONResponse({"info": info, "errors": errors})
+
+
 @app.get("/admin")
 async def admin_dashboard(request: Request):
     if not _check_admin(request):
