@@ -1,3 +1,4 @@
+import re
 from weebshelf.models import Figurine, SearchResult
 from weebshelf.config import STORE_RELIABILITY, PRICE_SCORE_CAP_USD
 
@@ -65,8 +66,53 @@ def get_reliability(store: str) -> float:
     return STORE_RELIABILITY.get(store, STORE_RELIABILITY["default"])
 
 
+def _normalize_name(name: str) -> str:
+    """Normalize a product name for deduplication comparison."""
+    s = name.lower()
+    # Remove common store-specific prefixes/suffixes
+    s = re.sub(r"\b(pre-?order|in stock|sold out|new|used|pre-?owned)\b", "", s)
+    # Remove scale ratios for comparison (1/7, 1/8 etc) — they'll match anyway
+    s = re.sub(r"\b\d+/\d+\b", "", s)
+    # Strip non-alphanumeric (keep spaces)
+    s = re.sub(r"[^a-z0-9\s]", "", s)
+    # Collapse whitespace
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
+def deduplicate(figurines: list[Figurine]) -> list[Figurine]:
+    """Remove duplicate products across stores, keeping the best listing per product."""
+    seen: dict[str, Figurine] = {}
+
+    for fig in figurines:
+        key = _normalize_name(fig.name)
+        if not key:
+            continue
+
+        if key in seen:
+            existing = seen[key]
+            # Prefer: has price > no price, in_stock > other, higher reliability
+            new_score = (
+                (1 if fig.price is not None else 0)
+                + (1 if fig.availability == "in_stock" else 0)
+                + get_reliability(fig.store)
+            )
+            old_score = (
+                (1 if existing.price is not None else 0)
+                + (1 if existing.availability == "in_stock" else 0)
+                + get_reliability(existing.store)
+            )
+            if new_score > old_score:
+                seen[key] = fig
+        else:
+            seen[key] = fig
+
+    return list(seen.values())
+
+
 def rank_results(figurines: list[Figurine], parsed_query: dict) -> list[SearchResult]:
-    """Rank figurines by composite score."""
+    """Deduplicate and rank figurines by composite score."""
+    figurines = deduplicate(figurines)
     results = []
 
     for fig in figurines:

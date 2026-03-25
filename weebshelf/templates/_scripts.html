@@ -31,4 +31,187 @@
         });
     }
 })();
+
+// ── Search Autocomplete ──
+(function() {
+    var inputs = document.querySelectorAll('.search-input');
+    var timer = null;
+
+    inputs.forEach(function(input) {
+        var wrapper = input.closest('.search-wrapper');
+        if (!wrapper) return;
+
+        // Create dropdown
+        var dropdown = document.createElement('div');
+        dropdown.className = 'autocomplete-dropdown';
+        wrapper.style.position = 'relative';
+        wrapper.appendChild(dropdown);
+
+        input.addEventListener('input', function() {
+            clearTimeout(timer);
+            var q = input.value.trim();
+            if (q.length < 2) { dropdown.innerHTML = ''; dropdown.style.display = 'none'; return; }
+
+            timer = setTimeout(function() {
+                fetch('/api/autocomplete?q=' + encodeURIComponent(q))
+                    .then(function(r) { return r.json(); })
+                    .then(function(items) {
+                        if (!items.length) { dropdown.style.display = 'none'; return; }
+                        dropdown.innerHTML = items.map(function(item) {
+                            return '<a class="ac-item" href="/?q=' + encodeURIComponent(item.term) + '">' +
+                                '<span class="ac-term">' + item.term + '</span>' +
+                                '<span class="ac-pop">' + item.popularity + ' searches</span>' +
+                                '</a>';
+                        }).join('');
+                        dropdown.style.display = 'block';
+                    })
+                    .catch(function() { dropdown.style.display = 'none'; });
+            }, 200);
+        });
+
+        input.addEventListener('blur', function() {
+            setTimeout(function() { dropdown.style.display = 'none'; }, 150);
+        });
+
+        input.addEventListener('focus', function() {
+            if (dropdown.innerHTML) dropdown.style.display = 'block';
+        });
+    });
+})();
+
+// ── Wishlist ──
+(function() {
+    var STORAGE_KEY = 'figurya-wishlist';
+
+    function getWishlist() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+        catch(e) { return []; }
+    }
+
+    function saveWishlist(list) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        updateBadge();
+    }
+
+    function isInWishlist(url) {
+        return getWishlist().some(function(item) { return item.url === url; });
+    }
+
+    function addToWishlist(item) {
+        var list = getWishlist();
+        if (!list.some(function(i) { return i.url === item.url; })) {
+            list.unshift(item);
+            if (list.length > 100) list.pop();
+            saveWishlist(list);
+        }
+    }
+
+    function removeFromWishlist(url) {
+        var list = getWishlist().filter(function(i) { return i.url !== url; });
+        saveWishlist(list);
+    }
+
+    function updateBadge() {
+        var badge = document.getElementById('wishlistBadge');
+        var count = getWishlist().length;
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'flex' : 'none';
+        }
+    }
+
+    function renderPanel() {
+        var list = getWishlist();
+        var container = document.getElementById('wishlistItems');
+        var empty = document.getElementById('wishlistEmpty');
+        if (!container) return;
+
+        if (list.length === 0) {
+            container.innerHTML = '';
+            if (empty) empty.style.display = 'block';
+            return;
+        }
+        if (empty) empty.style.display = 'none';
+
+        container.innerHTML = list.map(function(item) {
+            return '<div class="wl-item">' +
+                '<a href="' + item.url + '" target="_blank" rel="noopener" class="wl-link">' +
+                    (item.image ? '<img src="' + item.image + '" alt="" class="wl-img">' : '<div class="wl-img wl-no-img">No img</div>') +
+                    '<div class="wl-info">' +
+                        '<span class="wl-name">' + item.name + '</span>' +
+                        '<span class="wl-meta">' + (item.price || 'Price N/A') + ' &middot; ' + (item.store || '') + '</span>' +
+                    '</div>' +
+                '</a>' +
+                '<button class="wl-remove" data-url="' + item.url + '" title="Remove">&times;</button>' +
+            '</div>';
+        }).join('');
+
+        // Attach remove handlers
+        container.querySelectorAll('.wl-remove').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                removeFromWishlist(btn.getAttribute('data-url'));
+                renderPanel();
+                // Update any visible heart buttons
+                document.querySelectorAll('.wishlist-btn[data-url="' + btn.getAttribute('data-url') + '"]').forEach(function(b) {
+                    b.classList.remove('active');
+                });
+            });
+        });
+    }
+
+    // Toggle panel
+    var toggle = document.getElementById('wishlistToggle');
+    var panel = document.getElementById('wishlistPanel');
+    if (toggle && panel) {
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var isOpen = panel.classList.toggle('open');
+            if (isOpen) renderPanel();
+        });
+
+        // Close on outside click
+        document.addEventListener('click', function(e) {
+            if (!panel.contains(e.target) && !toggle.contains(e.target)) {
+                panel.classList.remove('open');
+            }
+        });
+    }
+
+    // Heart buttons on cards
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.wishlist-btn');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        var url = btn.getAttribute('data-url');
+        if (isInWishlist(url)) {
+            removeFromWishlist(url);
+            btn.classList.remove('active');
+        } else {
+            addToWishlist({
+                name: btn.getAttribute('data-name'),
+                url: url,
+                image: btn.getAttribute('data-image'),
+                price: btn.getAttribute('data-price'),
+                store: btn.getAttribute('data-store'),
+            });
+            btn.classList.add('active');
+        }
+    });
+
+    // Init
+    updateBadge();
+
+    // Mark existing cards as wishlisted
+    document.querySelectorAll('.wishlist-btn').forEach(function(btn) {
+        if (isInWishlist(btn.getAttribute('data-url'))) {
+            btn.classList.add('active');
+        }
+    });
+
+    // Expose for external use
+    window.figuryaWishlist = { getWishlist: getWishlist, updateBadge: updateBadge };
+})();
 </script>

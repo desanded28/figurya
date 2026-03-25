@@ -1,12 +1,15 @@
 import asyncio
+import hashlib
 import logging
+import os
 import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse
+import httpx
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -68,6 +71,13 @@ FETCHERS = [
 ]
 
 crawler_task = None
+
+# Admin dashboard password — set via FIGURYA_ADMIN_PASS env var, default for local dev
+ADMIN_PASSWORD = os.environ.get("FIGURYA_ADMIN_PASS", "figurya-admin-2024")
+
+# Image proxy cache directory
+IMG_CACHE_DIR = Path(__file__).parent.parent / "img_cache"
+IMG_CACHE_DIR.mkdir(exist_ok=True)
 
 rate_limit_store: dict[str, list[float]] = defaultdict(list)
 
@@ -280,6 +290,191 @@ async def home(request: Request, q: str = "", sort: str = "relevance", page: int
         "meta_description": f"Found {total_results} anime figurines for \"{q}\" across 15 stores. Compare prices and availability from AmiAmi, Solaris Japan, HobbySearch, and more.",
         "og_title": f"{q} — Figurine Search Results | Figurya",
         "canonical_url": f"{SITE_URL}/?q={q}",
+    })
+
+
+# ── Image Proxy ──────────────────────────────────────────────
+
+@app.get("/img")
+async def image_proxy(url: str = ""):
+    """Proxy and cache external product images to avoid hotlink blocks."""
+    if not url or not url.startswith(("http://", "https://")):
+        return Response(status_code=400)
+
+    # Use URL hash as cache key
+    url_hash = hashlib.md5(url.encode()).hexdigest()
+    cache_path = IMG_CACHE_DIR / url_hash
+
+    # Serve from disk cache if fresh (7 days)
+    if cache_path.exists():
+        age = time.time() - cache_path.stat().st_mtime
+        if age < 604800:
+            data = cache_path.read_bytes()
+            # Guess content type from first bytes
+            ct = "image/jpeg"
+            if data[:4] == b"\x89PNG":
+                ct = "image/png"
+            elif data[:4] == b"GIF8":
+                ct = "image/gif"
+            elif data[:4] == b"RIFF":
+                ct = "image/webp"
+            return Response(content=data, media_type=ct, headers={
+                "Cache-Control": "public, max-age=604800",
+            })
+
+    # Fetch from source
+    try:
+        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
+            resp = await client.get(url, headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+                "Accept": "image/*,*/*;q=0.8",
+            })
+            if resp.status_code != 200:
+                return Response(status_code=502)
+
+            content_type = resp.headers.get("content-type", "")
+            if "image" not in content_type:
+                return Response(status_code=502)
+
+            data = resp.content
+            # Don't cache files larger than 5MB
+            if len(data) < 5_000_000:
+                cache_path.write_bytes(data)
+
+            return Response(content=data, media_type=content_type, headers={
+                "Cache-Control": "public, max-age=604800",
+            })
+    except Exception:
+        return Response(status_code=502)
+
+
+# ── Search Autocomplete ─────────────────────────────────────
+
+@app.get("/api/autocomplete")
+async def autocomplete(q: str = ""):
+    """Return matching search terms from the database for autocomplete."""
+    q = q.strip()[:100]
+    if len(q) < 2:
+        return JSONResponse([])
+
+    with db_conn() as conn:
+        rows = conn.execute("""
+            SELECT term, popularity FROM search_terms
+            WHERE term LIKE ?
+            ORDER BY popularity DESC
+            LIMIT 8
+        """, (f"%{q}%",)).fetchall()
+
+    suggestions = [{"term": r["term"], "popularity": r["popularity"]} for r in rows]
+    return JSONResponse(suggestions)
+
+
+# ── Admin Dashboard ──────────────────────────────────────────
+
+def _check_admin(request: Request) -> bool:
+    """Check if the admin session cookie is valid."""
+    token = request.cookies.get("figurya_admin")
+    expected = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()[:32]
+    return token == expected
+
+
+@app.get("/admin/login")
+async def admin_login_page(request: Request):
+    if _check_admin(request):
+        return RedirectResponse("/admin", status_code=302)
+    return templates.TemplateResponse("admin_login.html", {"request": request})
+
+
+@app.post("/admin/login")
+async def admin_login_submit(request: Request):
+    form = await request.form()
+    password = form.get("password", "")
+    if password == ADMIN_PASSWORD:
+        token = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()[:32]
+        response = RedirectResponse("/admin", status_code=302)
+        response.set_cookie("figurya_admin", token, httponly=True, max_age=86400 * 7)
+        return response
+    return templates.TemplateResponse("admin_login.html", {
+        "request": request, "error": "Wrong password",
+    })
+
+
+@app.get("/admin")
+async def admin_dashboard(request: Request):
+    if not _check_admin(request):
+        return RedirectResponse("/admin/login", status_code=302)
+
+    stats = get_db_stats()
+
+    with db_conn() as conn:
+        # Store health: last results per store
+        store_health = conn.execute("""
+            SELECT store, COUNT(*) as total,
+                   SUM(CASE WHEN price IS NOT NULL THEN 1 ELSE 0 END) as with_price,
+                   SUM(CASE WHEN image_url != '' THEN 1 ELSE 0 END) as with_image,
+                   MAX(last_updated) as last_seen
+            FROM figurines
+            GROUP BY store
+            ORDER BY total DESC
+        """).fetchall()
+
+        # Recent searches
+        recent_searches = conn.execute("""
+            SELECT term, popularity, last_crawled
+            FROM search_terms
+            ORDER BY last_crawled DESC
+            LIMIT 20
+        """).fetchall()
+
+        # Cache stats
+        cache_fresh = conn.execute("""
+            SELECT COUNT(*) as c FROM search_terms
+            WHERE (? - last_crawled) / 3600.0 <= 24
+        """, (time.time(),)).fetchone()["c"]
+
+        cache_stale = conn.execute("""
+            SELECT COUNT(*) as c FROM search_terms
+            WHERE (? - last_crawled) / 3600.0 > 24
+        """, (time.time(),)).fetchone()["c"]
+
+    # Compute health status per store
+    now = time.time()
+    stores_data = []
+    for row in store_health:
+        age_hours = (now - row["last_seen"]) / 3600 if row["last_seen"] else 999
+        status = "healthy" if age_hours < 48 else "stale" if age_hours < 168 else "dead"
+        stores_data.append({
+            "name": row["store"],
+            "total": row["total"],
+            "with_price": row["with_price"],
+            "with_image": row["with_image"],
+            "age_hours": round(age_hours, 1),
+            "status": status,
+        })
+
+    searches_data = []
+    for row in recent_searches:
+        age = (now - row["last_crawled"]) / 3600 if row["last_crawled"] else 0
+        searches_data.append({
+            "term": row["term"],
+            "popularity": row["popularity"],
+            "age_hours": round(age, 1),
+        })
+
+    # Image cache stats
+    img_cache_count = len(list(IMG_CACHE_DIR.iterdir())) if IMG_CACHE_DIR.exists() else 0
+    img_cache_size_mb = sum(f.stat().st_size for f in IMG_CACHE_DIR.iterdir() if f.is_file()) / 1_000_000 if IMG_CACHE_DIR.exists() else 0
+
+    return templates.TemplateResponse("admin.html", {
+        "request": request,
+        "stats": stats,
+        "stores": stores_data,
+        "recent_searches": searches_data,
+        "cache_fresh": cache_fresh,
+        "cache_stale": cache_stale,
+        "img_cache_count": img_cache_count,
+        "img_cache_size_mb": round(img_cache_size_mb, 1),
+        "fetcher_count": len(FETCHERS),
     })
 
 
