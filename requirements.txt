@@ -4,3 +4,4 @@ jinja2>=3.1
 httpx>=0.25
 beautifulsoup4>=4.12
 pydantic>=2.5
+python-multipart>=0.0.6
