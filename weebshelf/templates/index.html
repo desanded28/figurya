@@ -117,7 +117,7 @@
         <a href="{{ r.figurine.safe_product_url }}" target="_blank" rel="noopener noreferrer" class="card">
             <div class="card-img">
                 {% if r.figurine.image_url %}
-                <img src="{{ r.figurine.safe_image_url }}" alt="{{ r.figurine.name }}" loading="lazy">
+                <img src="/img?url={{ r.figurine.safe_image_url|urlencode }}" alt="{{ r.figurine.name }}" loading="lazy">
                 {% else %}
                 <div class="no-img">No image</div>
                 {% endif %}
