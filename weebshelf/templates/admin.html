@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin Dashboard | Figurya</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .admin { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+        .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+        .admin-header h1 { font-size: 1.6rem; font-weight: 800; color: var(--text-white); }
+        .admin-header a { font-size: 0.82rem; color: var(--text-muted); }
+        .admin-header a:hover { color: var(--accent); }
+
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 32px; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; }
+        .stat-card .label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .stat-card .value { font-size: 1.6rem; font-weight: 700; color: var(--text-primary); }
+        .stat-card .value.green { color: var(--green); }
+        .stat-card .value.red { color: var(--red); }
+        .stat-card .value.blue { color: var(--blue); }
+
+        .admin-section { margin-bottom: 32px; }
+        .admin-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; }
+
+        .store-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+        .store-table th { text-align: left; padding: 12px 16px; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); }
+        .store-table td { padding: 12px 16px; font-size: 0.85rem; color: var(--text-primary); border-bottom: 1px solid var(--border-subtle); }
+        .store-table tr:last-child td { border-bottom: none; }
+
+        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+        .status-dot.healthy { background: var(--green); }
+        .status-dot.stale { background: var(--yellow); }
+        .status-dot.dead { background: var(--red); }
+
+        .search-list { display: flex; flex-direction: column; gap: 4px; }
+        .search-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); }
+        .search-item .term { font-size: 0.85rem; color: var(--text-primary); font-weight: 500; }
+        .search-item .meta { font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 12px; }
+
+        @media (max-width: 768px) {
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .store-table { font-size: 0.78rem; }
+            .store-table th, .store-table td { padding: 10px 12px; }
+        }
+    </style>
+</head>
+<body>
+    {% include '_navbar.html' %}
+
+    <div class="admin">
+        <div class="admin-header">
+            <h1>Admin Dashboard</h1>
+            <a href="/">Back to site</a>
+        </div>
+
+        <!-- Overview stats -->
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="label">Total Figurines</div>
+                <div class="value">{{ stats.figurines|default(0) }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Active Stores</div>
+                <div class="value blue">{{ stores|length }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Fetchers</div>
+                <div class="value">{{ fetcher_count }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Search Terms</div>
+                <div class="value">{{ stats.search_terms|default(0) }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Cache (Fresh)</div>
+                <div class="value green">{{ cache_fresh }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Cache (Stale)</div>
+                <div class="value red">{{ cache_stale }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Pending Crawls</div>
+                <div class="value">{{ stats.pending_crawls|default(0) }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Image Cache</div>
+                <div class="value">{{ img_cache_count }} ({{ img_cache_size_mb }}MB)</div>
+            </div>
+        </div>
+
+        <!-- Store health -->
+        <div class="admin-section">
+            <h2>Store Health</h2>
+            <table class="store-table">
+                <thead>
+                    <tr>
+                        <th>Store</th>
+                        <th>Status</th>
+                        <th>Products</th>
+                        <th>w/ Price</th>
+                        <th>w/ Image</th>
+                        <th>Last Seen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in stores %}
+                    <tr>
+                        <td><strong>{{ s.name }}</strong></td>
+                        <td><span class="status-dot {{ s.status }}"></span>{{ s.status|title }}</td>
+                        <td>{{ s.total }}</td>
+                        <td>{{ s.with_price }}</td>
+                        <td>{{ s.with_image }}</td>
+                        <td>{{ s.age_hours }}h ago</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Recent searches -->
+        <div class="admin-section">
+            <h2>Recent Searches</h2>
+            <div class="search-list">
+                {% for s in recent_searches %}
+                <div class="search-item">
+                    <span class="term">{{ s.term }}</span>
+                    <span class="meta">
+                        <span>pop: {{ s.popularity }}</span>
+                        <span>{{ s.age_hours }}h ago</span>
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin Login | Figurya</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+        .login-box { width: 100%; max-width: 360px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 40px 32px; }
+        .login-box h1 { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+        .login-box p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px; }
+        .login-input { width: 100%; padding: 12px 14px; background: var(--bg-input); border: 1px solid var(--border-light); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.9rem; font-family: inherit; outline: none; margin-bottom: 16px; }
+        .login-input:focus { border-color: var(--accent); }
+        .login-btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+        .login-btn:hover { background: var(--accent-hover); }
+        .login-error { color: var(--red); font-size: 0.82rem; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+    <div class="login-page">
+        <div class="login-box">
+            <h1>Figurya Admin</h1>
+            <p>Enter the admin password to continue.</p>
+            {% if error %}<p class="login-error">{{ error }}</p>{% endif %}
+            <form method="POST" action="/admin/login">
+                <input type="password" name="password" class="login-input" placeholder="Password" autofocus required>
+                <button type="submit" class="login-btn">Log in</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
