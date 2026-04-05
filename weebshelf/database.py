@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import json
 import logging
@@ -8,7 +9,10 @@ from weebshelf.config import CACHE_TTL_HOURS
 
 logger = logging.getLogger("figurya.db")
 
-DB_PATH = Path(__file__).parent.parent / "weebshelf.db"
+# Data directory can be overridden via FIGURYA_DATA_DIR env var (for Railway persistent volume)
+DATA_DIR = Path(os.environ.get("FIGURYA_DATA_DIR", str(Path(__file__).parent.parent)))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+DB_PATH = DATA_DIR / "weebshelf.db"
 
 
 @contextmanager
