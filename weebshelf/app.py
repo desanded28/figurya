@@ -75,9 +75,10 @@ crawler_task = None
 # Admin dashboard password — set via FIGURYA_ADMIN_PASS env var, default for local dev
 ADMIN_PASSWORD = os.environ.get("FIGURYA_ADMIN_PASS", "figurya-admin-2024")
 
-# Image proxy cache directory
-IMG_CACHE_DIR = Path(__file__).parent.parent / "img_cache"
-IMG_CACHE_DIR.mkdir(exist_ok=True)
+# Image proxy cache directory (lives inside FIGURYA_DATA_DIR so it persists on Railway volume)
+_DATA_DIR = Path(os.environ.get("FIGURYA_DATA_DIR", str(Path(__file__).parent.parent)))
+IMG_CACHE_DIR = _DATA_DIR / "img_cache"
+IMG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 rate_limit_store: dict[str, list[float]] = defaultdict(list)
 
