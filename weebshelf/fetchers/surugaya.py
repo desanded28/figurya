@@ -11,11 +11,8 @@ class SurugayaFetcher(BaseFetcher):
     BASE_URL = "https://www.suruga-ya.com"
 
     async def _fetch(self, query: str) -> list[Figurine]:
-        url = f"{self.BASE_URL}/en/search"
-        params = {
-            "category": "",
-            "search_word": f"{query} figure",
-        }
+        url = f"{self.BASE_URL}/en/products"
+        params = {"search_word": f"{query} figure"}
 
         async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
             resp = await client.get(url, params=params, headers=DEFAULT_HEADERS)
@@ -26,25 +23,30 @@ class SurugayaFetcher(BaseFetcher):
 
     def _parse_results(self, html: str) -> list[Figurine]:
         soup = BeautifulSoup(html, "html.parser")
-        items = soup.select(".item") or soup.select(".product_box") or soup.select('[class*="item"]')
+        items = soup.select(".item.col-12")
         figures = []
 
         for item in items[:MAX_RESULTS_PER_SOURCE]:
             try:
-                # Title
-                title_el = item.select_one("a[title]") or item.select_one(".title a") or item.select_one("a")
-                if not title_el:
-                    continue
-                name = title_el.get("title", "") or title_el.get_text(strip=True)
+                # Name (prefer alt attribute on image, fallback to title link text)
+                img = item.select_one("img")
+                name = ""
+                if img:
+                    name = img.get("alt", "").strip()
+                if not name:
+                    title_link = item.select_one(".title_product a")
+                    if title_link:
+                        name = title_link.get_text(strip=True)
                 if not name:
                     continue
 
                 # URL
-                href = title_el.get("href", "")
-                product_url = self.make_absolute(href, self.BASE_URL)
+                link = item.select_one(".title_product a") or item.select_one("a[href*='/product/']")
+                if not link:
+                    continue
+                product_url = self.make_absolute(link.get("href", ""), self.BASE_URL)
 
                 # Image
-                img = item.select_one("img")
                 img_url = ""
                 if img:
                     img_url = img.get("src", "") or img.get("data-src", "")
@@ -52,15 +54,21 @@ class SurugayaFetcher(BaseFetcher):
 
                 # Price (JPY)
                 price = None
-                price_el = item.select_one(".price") or item.select_one('[class*="price"]')
+                price_el = item.select_one(".price-new") or item.select_one(".price_product")
                 if price_el:
                     price_text = price_el.get_text()
-                    price_match = re.search(r"[\d,]+", price_text.replace("¥", ""))
+                    price_match = re.search(r"[\d,]+", price_text)
                     if price_match:
                         try:
                             price = float(price_match.group().replace(",", ""))
                         except ValueError:
                             pass
+
+                # Used vs new
+                is_used = bool(item.select_one(".icon_used"))
+                tags = self.extract_tags(name)
+                if is_used:
+                    tags.append("pre-owned")
 
                 fig = Figurine(
                     name=name,
@@ -69,8 +77,8 @@ class SurugayaFetcher(BaseFetcher):
                     store=self.name,
                     price=price,
                     currency="JPY",
-                    availability="in_stock",  # Suruga-ya mostly lists available items
-                    tags=self.extract_tags(name, ["pre-owned"]),
+                    availability="in_stock",
+                    tags=tags,
                     description=name,
                 )
                 figures.append(fig)
