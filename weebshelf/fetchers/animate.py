@@ -11,13 +11,10 @@ class AnimateFetcher(BaseFetcher):
     BASE_URL = "https://www.animate-onlineshop.jp"
 
     async def _fetch(self, query: str) -> list[Figurine]:
-        url = f"{self.BASE_URL}/products/search"
-        params = {
-            "q": query,
-            "cat": "figure",
-        }
+        url = f"{self.BASE_URL}/products/list.php"
+        params = {"smt": query}
 
-        headers = {**DEFAULT_HEADERS, "Accept-Language": "en-US,en;q=0.9,ja;q=0.8"}
+        headers = {**DEFAULT_HEADERS, "Accept-Language": "ja,en-US;q=0.9,en;q=0.8"}
 
         async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
             resp = await client.get(url, params=params, headers=headers)
@@ -28,46 +25,44 @@ class AnimateFetcher(BaseFetcher):
 
     def _parse_results(self, html: str) -> list[Figurine]:
         soup = BeautifulSoup(html, "html.parser")
-        cards = (
-            soup.select(".product-item")
-            or soup.select(".item")
-            or soup.select('[class*="product"]')
-            or soup.select(".search-result-item")
-        )
+        items = soup.select(".item_list ul li")
         figures = []
 
-        for card in cards[:MAX_RESULTS_PER_SOURCE]:
+        for item in items[:MAX_RESULTS_PER_SOURCE]:
             try:
-                title_el = (
-                    card.select_one(".product-name a")
-                    or card.select_one("a[title]")
-                    or card.select_one("h3 a")
-                    or card.select_one("a")
-                )
-                if not title_el:
+                link = item.select_one("h3 a") or item.select_one(".item_list_thumb a")
+                if not link:
                     continue
-                name = title_el.get("title", "") or title_el.get_text(strip=True)
+
+                name = link.get("title", "") or link.get_text(strip=True)
                 if not name:
                     continue
 
-                href = title_el.get("href", "")
-                product_url = self.make_absolute(href, self.BASE_URL)
+                product_url = self.make_absolute(link.get("href", ""), self.BASE_URL)
 
-                img = card.select_one("img")
+                img = item.select_one("img")
                 img_url = ""
                 if img:
                     img_url = img.get("src", "") or img.get("data-src", "")
                     img_url = self.make_absolute(img_url, self.BASE_URL)
 
+                # Price (JPY) — format: "2,420円(税込)"
                 price = None
-                price_el = card.select_one(".price") or card.select_one('[class*="price"]')
+                price_el = item.select_one(".price font") or item.select_one(".price")
                 if price_el:
-                    price_match = re.search(r"[\d,]+", price_el.get_text().replace("¥", ""))
+                    price_text = price_el.get_text()
+                    price_match = re.search(r"[\d,]+", price_text)
                     if price_match:
                         try:
                             price = float(price_match.group().replace(",", ""))
                         except ValueError:
                             pass
+
+                # Stock status
+                stock_el = item.select_one(".stock")
+                availability = "in_stock"
+                if stock_el and "販売終了" in stock_el.get_text():
+                    availability = "out_of_stock"
 
                 fig = Figurine(
                     name=name,
@@ -76,7 +71,7 @@ class AnimateFetcher(BaseFetcher):
                     store=self.name,
                     price=price,
                     currency="JPY",
-                    availability="unknown",
+                    availability=availability,
                     tags=self.extract_tags(name),
                     description=name,
                 )
