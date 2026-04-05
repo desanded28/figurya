@@ -1,6 +1,5 @@
-import httpx
 from bs4 import BeautifulSoup
-from weebshelf.fetchers.base import BaseFetcher, DEFAULT_HEADERS, logger
+from weebshelf.fetchers.base import BaseFetcher, DEFAULT_HEADERS, logger, proxied_get
 from weebshelf.models import Figurine
 from weebshelf.config import MAX_RESULTS_PER_SOURCE
 import re
@@ -17,15 +16,14 @@ class AmazonFetcher(BaseFetcher):
             "i": "toys-and-games",
         }
 
-        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
-            resp = await client.get(search_url, params=params, headers=DEFAULT_HEADERS)
-            if resp.status_code != 200:
-                logger.warning(f"[{self.name}] Status {resp.status_code}")
-                return []
-            if "captcha" in resp.text.lower()[:2000] or "robot" in resp.text.lower()[:2000]:
-                logger.info(f"[{self.name}] Captcha detected, skipping")
-                return []
-            return self._parse_results(resp.text)
+        resp = await proxied_get(search_url, params=params, headers=DEFAULT_HEADERS)
+        if resp.status_code != 200:
+            logger.warning(f"[{self.name}] Status {resp.status_code}")
+            return []
+        if "captcha" in resp.text.lower()[:2000] or "robot" in resp.text.lower()[:2000]:
+            logger.info(f"[{self.name}] Captcha detected, skipping")
+            return []
+        return self._parse_results(resp.text)
 
     def _parse_results(self, html: str) -> list[Figurine]:
         soup = BeautifulSoup(html, "html.parser")

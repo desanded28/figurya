@@ -1,6 +1,5 @@
-import httpx
 from bs4 import BeautifulSoup
-from weebshelf.fetchers.base import BaseFetcher, DEFAULT_HEADERS, logger
+from weebshelf.fetchers.base import BaseFetcher, DEFAULT_HEADERS, logger, proxied_get
 from weebshelf.models import Figurine
 from weebshelf.config import MAX_RESULTS_PER_SOURCE
 import re
@@ -11,15 +10,14 @@ class OtakuRepublicFetcher(BaseFetcher):
     BASE_URL = "https://otakurepublic.com"
 
     async def _fetch(self, query: str) -> list[Figurine]:
-        url = f"{self.BASE_URL}/product/search"
-        params = {"keyword": f"{query} figure"}
+        url = f"{self.BASE_URL}/product/text_search.html"
+        params = {"q": f"{query} figure"}
 
-        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
-            resp = await client.get(url, params=params, headers=DEFAULT_HEADERS)
-            if resp.status_code != 200:
-                logger.warning(f"[{self.name}] Status {resp.status_code}")
-                return []
-            return self._parse_results(resp.text)
+        resp = await proxied_get(url, params=params, headers=DEFAULT_HEADERS)
+        if resp.status_code != 200:
+            logger.warning(f"[{self.name}] Status {resp.status_code}")
+            return []
+        return self._parse_results(resp.text)
 
     def _parse_results(self, html: str) -> list[Figurine]:
         soup = BeautifulSoup(html, "html.parser")

@@ -1,8 +1,43 @@
 import logging
+import os
 from abc import ABC, abstractmethod
+from urllib.parse import quote
+
+import httpx
+
 from weebshelf.models import Figurine
 
 logger = logging.getLogger("figurya.fetchers")
+
+# Cloudflare Worker proxy for scraping stores that block datacenter IPs.
+# Set PROXY_URL (worker endpoint) + PROXY_KEY env vars to enable.
+PROXY_URL = os.environ.get("FIGURYA_PROXY_URL", "")
+PROXY_KEY = os.environ.get("FIGURYA_PROXY_KEY", "")
+
+
+async def proxied_get(
+    url: str,
+    headers: dict | None = None,
+    timeout: int = 20,
+    params: dict | None = None,
+) -> httpx.Response:
+    """GET a URL through the Cloudflare Worker proxy if configured,
+    otherwise fetch directly. Raises httpx errors as usual."""
+    if params:
+        # Build the full URL including query params before proxying
+        query_str = "&".join(f"{k}={quote(str(v))}" for k, v in params.items())
+        separator = "&" if "?" in url else "?"
+        url = f"{url}{separator}{query_str}"
+
+    if PROXY_URL and PROXY_KEY:
+        proxy_endpoint = f"{PROXY_URL}?url={quote(url, safe='')}"
+        proxy_headers = dict(headers or {})
+        proxy_headers["X-Proxy-Key"] = PROXY_KEY
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+            return await client.get(proxy_endpoint, headers=proxy_headers)
+
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+        return await client.get(url, headers=headers or {})
 
 # Shared tag words used by all fetchers
 TAG_WORDS = [
