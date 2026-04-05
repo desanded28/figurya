@@ -15,7 +15,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
-SITE_URL = "https://figuryaa.onrender.com"
+SITE_URL = os.environ.get("SITE_URL", "https://figurya-production.up.railway.app")
 
 from weebshelf.query import parse_query, build_search_terms
 from weebshelf.fetchers.hobbysearch import HobbySearchFetcher
