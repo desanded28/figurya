@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from weebshelf.fetchers.base import BaseFetcher, DEFAULT_HEADERS, logger, proxied_get
+from weebshelf.fetchers.base import BaseFetcher, DEFAULT_HEADERS, logger, oracle_proxied_get
 from weebshelf.models import Figurine
 from weebshelf.config import MAX_RESULTS_PER_SOURCE
 
@@ -12,7 +12,7 @@ class OtakuRepublicFetcher(BaseFetcher):
         url = f"{self.BASE_URL}/product/text_search.html"
         params = {"q": f"{query} figure"}
 
-        resp = await proxied_get(url, params=params, headers=DEFAULT_HEADERS)
+        resp = await oracle_proxied_get(url, params=params, headers=DEFAULT_HEADERS)
         if resp.status_code != 200:
             logger.warning(f"[{self.name}] Status {resp.status_code}")
             return []

@@ -9,10 +9,32 @@ from weebshelf.models import Figurine
 
 logger = logging.getLogger("figurya.fetchers")
 
-# Cloudflare Worker proxy for scraping stores that block datacenter IPs.
-# Set PROXY_URL (worker endpoint) + PROXY_KEY env vars to enable.
+# Cloudflare Worker proxy — for stores that block datacenter IPs (e.g. Amazon)
 PROXY_URL = os.environ.get("FIGURYA_PROXY_URL", "")
 PROXY_KEY = os.environ.get("FIGURYA_PROXY_KEY", "")
+
+# Oracle VPS proxy — for stores behind Cloudflare that block CF Worker IPs
+# (e.g. Hobby Genki, Otaku Republic)
+ORACLE_PROXY_URL = os.environ.get("FIGURYA_ORACLE_PROXY_URL", "")
+ORACLE_PROXY_KEY = os.environ.get("FIGURYA_ORACLE_PROXY_KEY", "")
+
+
+def _build_url_with_params(url: str, params: dict | None) -> str:
+    if not params:
+        return url
+    query_str = "&".join(f"{k}={quote(str(v))}" for k, v in params.items())
+    separator = "&" if "?" in url else "?"
+    return f"{url}{separator}{query_str}"
+
+
+async def _fetch_via_proxy(
+    proxy_url: str, proxy_key: str, url: str, headers: dict, timeout: int
+) -> httpx.Response:
+    proxy_endpoint = f"{proxy_url}?url={quote(url, safe='')}"
+    proxy_headers = dict(headers)
+    proxy_headers["X-Proxy-Key"] = proxy_key
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+        return await client.get(proxy_endpoint, headers=proxy_headers)
 
 
 async def proxied_get(
@@ -21,23 +43,35 @@ async def proxied_get(
     timeout: int = 20,
     params: dict | None = None,
 ) -> httpx.Response:
-    """GET a URL through the Cloudflare Worker proxy if configured,
-    otherwise fetch directly. Raises httpx errors as usual."""
-    if params:
-        # Build the full URL including query params before proxying
-        query_str = "&".join(f"{k}={quote(str(v))}" for k, v in params.items())
-        separator = "&" if "?" in url else "?"
-        url = f"{url}{separator}{query_str}"
+    """GET via the CF Worker proxy if configured, otherwise direct."""
+    url = _build_url_with_params(url, params)
+    hdrs = headers or {}
 
     if PROXY_URL and PROXY_KEY:
-        proxy_endpoint = f"{PROXY_URL}?url={quote(url, safe='')}"
-        proxy_headers = dict(headers or {})
-        proxy_headers["X-Proxy-Key"] = PROXY_KEY
-        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
-            return await client.get(proxy_endpoint, headers=proxy_headers)
+        return await _fetch_via_proxy(PROXY_URL, PROXY_KEY, url, hdrs, timeout)
 
     async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
-        return await client.get(url, headers=headers or {})
+        return await client.get(url, headers=hdrs)
+
+
+async def oracle_proxied_get(
+    url: str,
+    headers: dict | None = None,
+    timeout: int = 25,
+    params: dict | None = None,
+) -> httpx.Response:
+    """GET via the Oracle VPS proxy (for CF-blocked stores).
+    Falls back to CF Worker proxy, then direct."""
+    url = _build_url_with_params(url, params)
+    hdrs = headers or {}
+
+    if ORACLE_PROXY_URL and ORACLE_PROXY_KEY:
+        return await _fetch_via_proxy(ORACLE_PROXY_URL, ORACLE_PROXY_KEY, url, hdrs, timeout)
+    if PROXY_URL and PROXY_KEY:
+        return await _fetch_via_proxy(PROXY_URL, PROXY_KEY, url, hdrs, timeout)
+
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+        return await client.get(url, headers=hdrs)
 
 # Shared tag words used by all fetchers
 TAG_WORDS = [
