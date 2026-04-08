@@ -2,7 +2,6 @@ from bs4 import BeautifulSoup
 from weebshelf.fetchers.base import BaseFetcher, DEFAULT_HEADERS, logger, proxied_get
 from weebshelf.models import Figurine
 from weebshelf.config import MAX_RESULTS_PER_SOURCE
-import re
 
 
 class OtakuRepublicFetcher(BaseFetcher):
@@ -21,45 +20,48 @@ class OtakuRepublicFetcher(BaseFetcher):
 
     def _parse_results(self, html: str) -> list[Figurine]:
         soup = BeautifulSoup(html, "html.parser")
-        cards = (
-            soup.select(".product-item")
-            or soup.select(".item-box")
-            or soup.select('[class*="product"]')
-        )
+        container = soup.select_one(".product_thumbnail_list")
+        if not container:
+            return []
+        items = container.select("li")
         figures = []
 
-        for card in cards[:MAX_RESULTS_PER_SOURCE]:
+        for item in items[:MAX_RESULTS_PER_SOURCE]:
             try:
-                title_el = (
-                    card.select_one(".product-name a")
-                    or card.select_one("a[title]")
-                    or card.select_one("h3 a")
-                    or card.select_one("a")
-                )
-                if not title_el:
+                link = item.select_one("a.product_preview_link")
+                if not link:
                     continue
-                name = title_el.get("title", "") or title_el.get_text(strip=True)
+
+                # Name from title span or image alt or aria-label
+                title_span = item.select_one(".thumbnail_info_product_title")
+                name = ""
+                if title_span:
+                    name = title_span.get("data-title-default", "")
+                if not name:
+                    img = item.select_one("img")
+                    name = img.get("alt", "") if img else ""
+                if not name:
+                    name = link.get("aria-label", "").replace("goto item page: ", "")
                 if not name:
                     continue
 
-                href = title_el.get("href", "")
+                href = link.get("href", "")
                 product_url = self.make_absolute(href, self.BASE_URL)
 
-                img = card.select_one("img")
+                img = item.select_one("img.thumbnail_img")
                 img_url = ""
                 if img:
                     img_url = img.get("src", "") or img.get("data-src", "")
                     img_url = self.make_absolute(img_url, self.BASE_URL)
 
+                # Price (USD) — from offscreen span for clean number
                 price = None
-                price_el = card.select_one(".price") or card.select_one('[class*="price"]')
+                price_el = item.select_one(".price_with_unit_offscreen")
                 if price_el:
-                    price_match = re.search(r"[\d,]+\.?\d*", price_el.get_text().replace("$", ""))
-                    if price_match:
-                        try:
-                            price = float(price_match.group().replace(",", ""))
-                        except ValueError:
-                            pass
+                    try:
+                        price = float(price_el.get_text(strip=True).replace(",", ""))
+                    except ValueError:
+                        pass
 
                 fig = Figurine(
                     name=name,
